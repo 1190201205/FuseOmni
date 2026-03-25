@@ -80,15 +80,15 @@ class DatasetArgs:
         default="theblackcat102/evol-codealpaca-v1",
         metadata={
             "help": "Name of the dataset to use.",
-            "choices": [
-                "m-a-p/CodeFeedback-Filtered-Instruction",
-                "ise-uiuc/Magicoder-Evol-Instruct-110K",
-                "allenai/c4",
-                "theblackcat102/evol-codealpaca-v1",
-                "euclaise/WritingPrompts_curated",
-                "allenai/tulu-3-sft-personas-math",
-                "combined"
-            ],
+            # "choices": [
+            #     "m-a-p/CodeFeedback-Filtered-Instruction",
+            #     "ise-uiuc/Magicoder-Evol-Instruct-110K",
+            #     "allenai/c4",
+            #     "theblackcat102/evol-codealpaca-v1",
+            #     "euclaise/WritingPrompts_curated",
+            #     "allenai/tulu-3-sft-personas-math",
+            #     "combined"
+            # ],
         },
     )
     dataset_config_name: str = field(
