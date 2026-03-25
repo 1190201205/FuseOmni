@@ -1,19 +1,15 @@
 from __future__ import annotations
 
-import argparse
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Sequence
+from typing import Any, Dict, List, Sequence
 
-try:
-    from torch.utils.data import Dataset
-except Exception:  # pragma: no cover - fallback for environments without torch
-    class Dataset:  # type: ignore[override]
-        """Fallback base class when PyTorch is not installed."""
+from dataset.base.dataset import BaseDataset
+from dataset.registry import register_dataset
 
-
-class VoiceAssistant400KDataset(Dataset):
+@register_dataset("voiceassistant400k")
+class VoiceAssistant400KDataset(BaseDataset):
     """Convert VoiceAssistant-400K jsonl records to flat message/audio samples."""
 
     _AUDIO_PLACEHOLDER = "<|audio|>"
@@ -22,9 +18,10 @@ class VoiceAssistant400KDataset(Dataset):
         self,
         dataset_root: str | Path,
         metadata_name: str = "data.jsonl",
-        load_all: bool = False,
+        max_samples: int | None = None,
+        **kwargs: Any
     ) -> None:
-        self.dataset_root = Path(dataset_root).expanduser().resolve()
+        super().__init__("voiceassistant400k", dataset_root, **kwargs)
         self.metadata_path = self.dataset_root / metadata_name
         self.audio_root = self.dataset_root / "audio"
 
@@ -33,11 +30,10 @@ class VoiceAssistant400KDataset(Dataset):
         if not self.audio_root.is_dir():
             raise FileNotFoundError(f"Audio directory not found: {self.audio_root}")
 
-        self.samples: List[Dict[str, Any]] | None = None
         self.last_stats = self._empty_stats()
+        self.max_samples = max_samples
 
-        if load_all:
-            self.samples = list(self.iter_samples())
+        self.load_data()
 
     @staticmethod
     def _empty_stats() -> Dict[str, int]:
@@ -48,7 +44,7 @@ class VoiceAssistant400KDataset(Dataset):
             "skipped_invalid_samples": 0,
         }
 
-    def _iter_samples(self, max_samples: int | None = None) -> Iterator[Dict[str, Any]]:
+    def load_data(self) -> None:
         stats = self._empty_stats()
 
         with self.metadata_path.open("r", encoding="utf-8") as handle:
@@ -59,24 +55,19 @@ class VoiceAssistant400KDataset(Dataset):
                 try:
                     record = json.loads(raw_line)
                 except json.JSONDecodeError as exc:
-                    raise ValueError(
-                        f"Invalid JSON at {self.metadata_path}:{line_no}: {exc}"
-                    ) from exc
+                    raise ValueError(f"Invalid JSON at {self.metadata_path}:{line_no}: {exc}") from exc
 
                 sample = self._convert_record(record, stats)
                 if sample is None:
                     continue
 
+                self.samples.append(sample)
                 stats["loaded"] += 1
-                yield sample
 
-                if max_samples is not None and stats["loaded"] >= max_samples:
+                if self.max_samples is not None and stats["loaded"] >= self.max_samples:
                     break
 
         self.last_stats = stats
-
-    def iter_samples(self, max_samples: int | None = None) -> Iterator[Dict[str, Any]]:
-        return self._iter_samples(max_samples=max_samples)
 
     def _convert_record(
         self,
@@ -118,8 +109,6 @@ class VoiceAssistant400KDataset(Dataset):
                 return None
 
             normalized_message = {
-                # "content": self._normalize_content(message.get("content")),
-                # "audio": None,
                 "content": [
                     {
                         "text": self._normalize_content(message.get("content")),
@@ -140,7 +129,6 @@ class VoiceAssistant400KDataset(Dataset):
                     stats["skipped_invalid_samples"] += 1
                     return None
 
-                # normalized_message["audio"] = audio_output_paths[audio_index]
                 normalized_message["content"][0]["audio_path"] = audio_output_paths[audio_index]
                 audio_index += 1
 
@@ -241,108 +229,3 @@ class VoiceAssistant400KDataset(Dataset):
             return relative_path.as_posix()
         except ValueError:
             return path.resolve().as_posix()
-
-    def _materialize(self) -> None:
-        if self.samples is None:
-            self.samples = list(self.iter_samples())
-
-    def __len__(self) -> int:
-        self._materialize()
-        assert self.samples is not None
-        return len(self.samples)
-
-    def __getitem__(self, index: int) -> Dict[str, Any]:
-        self._materialize()
-        assert self.samples is not None
-        return self.samples[index]
-
-    def __iter__(self) -> Iterator[Dict[str, Any]]:
-        if self.samples is not None:
-            return iter(self.samples)
-        return self.iter_samples()
-
-    def to_jsonl(
-        self,
-        output_path: str | Path,
-        max_samples: int | None = None,
-    ) -> Path:
-        output_path = Path(output_path).expanduser()
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        if self.samples is not None and max_samples is None:
-            sample_iterable: Iterator[Dict[str, Any]] | List[Dict[str, Any]] = self.samples
-        else:
-            sample_iterable = self.iter_samples(max_samples=max_samples)
-
-        with output_path.open("w", encoding="utf-8") as handle:
-            for sample in sample_iterable:
-                handle.write(json.dumps(sample, ensure_ascii=False) + "\n")
-
-        return output_path
-
-
-def _build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Convert VoiceAssistant-400K data.jsonl into flat message/audio jsonl."
-    )
-    parser.add_argument(
-        "dataset_root",
-        help="Path to VoiceAssistant-400K root directory.",
-    )
-    parser.add_argument(
-        "--output",
-        default="",
-        help="Optional output jsonl file path.",
-    )
-    parser.add_argument(
-        "--metadata-name",
-        default="data.jsonl",
-        help='Metadata filename under dataset root. Defaults to "data.jsonl".',
-    )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=0,
-        help="Optional maximum number of valid samples to process.",
-    )
-    parser.add_argument(
-        "--load-all",
-        action="store_true",
-        help="Load all converted samples into memory for Dataset-style access.",
-    )
-    return parser
-
-
-if __name__ == "__main__":
-    args = _build_arg_parser().parse_args()
-    limit = args.limit if args.limit > 0 else None
-
-    dataset = VoiceAssistant400KDataset(
-        dataset_root=args.dataset_root,
-        metadata_name=args.metadata_name,
-        load_all=args.load_all,
-    )
-
-    if args.output:
-        output_path = dataset.to_jsonl(args.output, max_samples=limit)
-        print(f"Saved converted samples to: {output_path}")
-        print(
-            "Stats: "
-            f"loaded={dataset.last_stats['loaded']}, "
-            f"skipped_missing_audio_samples={dataset.last_stats['skipped_missing_audio_samples']}, "
-            f"missing_audio_files={dataset.last_stats['missing_audio_files']}, "
-            f"skipped_invalid_samples={dataset.last_stats['skipped_invalid_samples']}"
-        )
-    else:
-        preview_samples = list(dataset.iter_samples(max_samples=1))
-        if not preview_samples:
-            print("No valid samples found.")
-        else:
-            print(json.dumps(preview_samples[0], ensure_ascii=False, indent=2))
-            print(
-                "Stats: "
-                f"loaded={dataset.last_stats['loaded']}, "
-                f"skipped_missing_audio_samples={dataset.last_stats['skipped_missing_audio_samples']}, "
-                f"missing_audio_files={dataset.last_stats['missing_audio_files']}, "
-                f"skipped_invalid_samples={dataset.last_stats['skipped_invalid_samples']}"
-            )

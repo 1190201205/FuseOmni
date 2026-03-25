@@ -1,30 +1,21 @@
 from __future__ import annotations
 
-import argparse
-import json
 import re
 from pathlib import Path
-from typing import Dict, Iterator, List
+from typing import Dict, List, Any
 
-try:
-    from torch.utils.data import Dataset
-except Exception:  # pragma: no cover - fallback for environments without torch
-    class Dataset:  # type: ignore[override]
-        """Fallback base class when PyTorch is not installed."""
+from dataset.base.dataset import BaseDataset
+from dataset.registry import register_dataset
 
-
-class AIShell3Dataset(Dataset):
+@register_dataset("aishell3")
+class AIShell3Dataset(BaseDataset):
     """Load AISHELL-3 content files and convert each row to TTS message samples."""
 
     _SUPPORTED_SPLITS = ("train", "test")
     _PINYIN_TOKEN_RE = re.compile(r"^[a-z]+[0-5]?$")
 
-    def __init__(self, dataset_root: str | Path, split: str = "") -> None:
-        """
-        Args:
-            dataset_root: Path to `datasets/AISHELL-3`.
-            split: One of "train", "test", or empty string for all splits.
-        """
+    def __init__(self, dataset_root: str | Path, split: str = "", max_samples: int | None = None, **kwargs: Any) -> None:
+        super().__init__("aishell3", dataset_root, **kwargs)
         normalized_split = (split or "").strip().lower()
         if normalized_split and normalized_split not in self._SUPPORTED_SPLITS:
             valid = '", "'.join(self._SUPPORTED_SPLITS)
@@ -32,22 +23,23 @@ class AIShell3Dataset(Dataset):
                 f'Invalid split "{split}". Expected one of "{valid}" or empty.'
             )
 
-        self.dataset_root = Path(dataset_root).expanduser().resolve()
         self.splits = [normalized_split] if normalized_split else list(self._SUPPORTED_SPLITS)
-        self.samples: List[Dict[str, object]] = []
         self.stats = self._empty_stats()
+        self.max_samples = max_samples
 
-        for split_name in self.splits:
-            self.samples.extend(self._load_split(split_name))
+        self.load_data()
 
     @staticmethod
     def _empty_stats() -> Dict[str, int]:
-        return {
-            "loaded": 0,
-            "skipped_missing_audio_samples": 0,
-        }
+        return {"loaded": 0, "skipped_missing_audio_samples": 0}
 
-    def _load_split(self, split_name: str) -> List[Dict[str, object]]:
+    def load_data(self) -> None:
+        for split_name in self.splits:
+            if self.max_samples is not None and len(self.samples) >= self.max_samples:
+                break
+            self._load_split(split_name)
+
+    def _load_split(self, split_name: str) -> None:
         split_root = self.dataset_root / split_name
         content_path = split_root / "content.txt"
         wav_root = split_root / "wav"
@@ -57,18 +49,18 @@ class AIShell3Dataset(Dataset):
         if not wav_root.is_dir():
             raise FileNotFoundError(f"Wav directory not found: {wav_root}")
 
-        split_samples: List[Dict[str, object]] = []
         with content_path.open("r", encoding="utf-8") as handle:
             for row_index, raw_line in enumerate(handle, start=1):
+                if self.max_samples is not None and len(self.samples) >= self.max_samples:
+                    break
+
                 line = raw_line.strip()
                 if not line:
                     continue
 
                 parts = line.split("\t", maxsplit=1)
                 if len(parts) != 2:
-                    raise ValueError(
-                        f"Invalid content format at {content_path}:{row_index}"
-                    )
+                    raise ValueError(f"Invalid content format at {content_path}:{row_index}")
 
                 audio_name, transcript_raw = parts
                 audio_rel_path = self._build_audio_rel_path(split_name, audio_name)
@@ -80,12 +72,10 @@ class AIShell3Dataset(Dataset):
 
                 transcript = self._normalize_transcript(transcript_raw)
                 if not transcript:
-                    raise ValueError(
-                        f"Empty transcript after normalization at {content_path}:{row_index}"
-                    )
+                    raise ValueError(f"Empty transcript after normalization at {content_path}:{row_index}")
 
                 sample_id = self._build_sample_id(split_name, audio_name)
-                split_samples.append(
+                self.samples.append(
                     {
                         "id": sample_id,
                         "messages": [
@@ -114,8 +104,6 @@ class AIShell3Dataset(Dataset):
                 )
                 self.stats["loaded"] += 1
 
-        return split_samples
-
     @classmethod
     def _normalize_transcript(cls, transcript: str) -> str:
         tokens = transcript.split()
@@ -138,7 +126,6 @@ class AIShell3Dataset(Dataset):
         utterance_id = Path(audio_name).stem
         if len(utterance_id) < 7:
             raise ValueError(f"Unexpected utterance id format: {audio_name}")
-
         speaker_id = utterance_id[:7]
         return Path(split_name, "wav", speaker_id, audio_name).as_posix()
 
@@ -147,61 +134,5 @@ class AIShell3Dataset(Dataset):
         utterance_id = Path(audio_name).stem
         if len(utterance_id) < 7:
             raise ValueError(f"Unexpected utterance id format: {audio_name}")
-
         speaker_id = utterance_id[:7]
         return f"aishell3_{split_name}_{speaker_id}_{utterance_id}"
-
-    def __len__(self) -> int:
-        return len(self.samples)
-
-    def __getitem__(self, index: int) -> Dict[str, object]:
-        return self.samples[index]
-
-    def __iter__(self) -> Iterator[Dict[str, object]]:
-        return iter(self.samples)
-
-    def to_jsonl(self, output_path: str | Path) -> Path:
-        output_path = Path(output_path).expanduser()
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with output_path.open("w", encoding="utf-8") as handle:
-            for sample in self.samples:
-                handle.write(json.dumps(sample, ensure_ascii=False) + "\n")
-        return output_path
-
-
-def _build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Load AISHELL-3 and optionally export as TTS jsonl."
-    )
-    parser.add_argument(
-        "dataset_root",
-        help="Path to AISHELL-3 root directory (contains train/ and test/).",
-    )
-    parser.add_argument(
-        "--split",
-        default="",
-        help='Split name: "train", "test", or empty for all.',
-    )
-    parser.add_argument(
-        "--output",
-        default="",
-        help="Optional output jsonl file path.",
-    )
-    return parser
-
-
-if __name__ == "__main__":
-    args = _build_arg_parser().parse_args()
-    dataset = AIShell3Dataset(dataset_root=args.dataset_root, split=args.split)
-    print(f"Loaded {len(dataset)} samples from splits: {', '.join(dataset.splits)}")
-    if dataset.stats["skipped_missing_audio_samples"] > 0:
-        print(
-            "Skipped "
-            f"{dataset.stats['skipped_missing_audio_samples']} samples with missing audio files."
-        )
-
-    if args.output:
-        output_path = dataset.to_jsonl(args.output)
-        print(f"Saved converted samples to: {output_path}")
-    elif len(dataset) > 0:
-        print(json.dumps(dataset[0], ensure_ascii=False, indent=2))
