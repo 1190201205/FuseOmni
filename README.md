@@ -20,9 +20,9 @@ FuseOmni/
 ├── ms-swift/          # 🚀 Model training & adaptation framework
 ├── reap/              # ✂️ REAP: Expert Pruning & Merging logic
 ├── ydj/               # ⚡ GPU Perpetual Motion & Job Management (SCO ACP)
+├── dataset/           # 📥 Dataset loading scripts & metadata (AISHELL, MMSU, etc.)
 ├── models/            # 📦 Model checkpoints & configurations
 ├── eval/              # 📊 Model evaluation suite (Planned)
-├── data/              # 🧪 Dataset preprocessing utilities (Planned)
 └── README.md          # 📖 You are here
 ```
 
@@ -39,8 +39,9 @@ Powered by [ms-swift](https://github.com/modelscope/ms-swift), this component ha
 ### 2. Model Pruning (`reap`)
 Implements **Router-weighted Expert Activation Pruning (REAP)**:
 - Considers both **router gate-values** and **average activation norms** to select experts for pruning.
+- **High-Performance Analysis**: Supports **dataset sharding** and parallel activation collection across multiple GPUs.
 - Achieves significant memory reduction (e.g., 50% compression) with minimal accuracy degradation.
-- Supports modern SMoE architectures like Qwen3-Coder and GLM-4.5.
+- Supports modern SMoE architectures like Qwen3-Coder, GLM-4.5, and DeepSeek-V3.
 
 ### 3. GPU Task Management (`ydj`)
 The **"Perpetual Motion Machine"** for SCO ACP clusters:
@@ -48,12 +49,18 @@ The **"Perpetual Motion Machine"** for SCO ACP clusters:
 - **Remote Submission**: Submit and manage jobs via `client.sh` without direct node access.
 - **Queue System**: Supports prioritized task execution and log tracking.
 
+### 4. Dataset Loading (`dataset`)
+Specialized loaders and metadata for multi-modal speech datasets:
+- **AISHELL-1/3**: Standard speech recognition and synthesis datasets.
+- **MMSU**: Multi-modal speech understanding benchmarks.
+- **Multi-Dataset Support**: Unified configuration-driven loading via `multi_dataset.py`.
+
 ---
 
 ## 🏗️ Roadmap
 
 - [ ] **Model Evaluation**: Integrate automated benchmarks for speech and multi-modal tasks.
-- [ ] **Dataset Preprocessing**: Unified pipeline for multi-modal data cleaning and tokenization.
+- [/] **Dataset Preprocessing**: Unified pipeline for multi-modal data cleaning and tokenization (Ongoing).
 - [ ] **Deployment**: Optimized inference kernels for edge-side NPU/GPU.
 
 ---
