@@ -10,6 +10,7 @@ wheels/
 .venv
 
 # reap specfic
+fig/
 artifacts/
 scratch/
 *.log

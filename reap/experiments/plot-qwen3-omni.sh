@@ -29,6 +29,7 @@ python src/reap/cluster.py \
     --output_dir "${OUTPUT_DIR}" \
     --compression_ratio 0.5 \
     --expert_sim "router_logits" \
-    --cluster_method "agglomerative"
+    --cluster_method "agglomerative" \
+    --export_activations
 
 echo "Plotting completed. Check ${OUTPUT_DIR} for results."

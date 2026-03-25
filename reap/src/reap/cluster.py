@@ -11,7 +11,7 @@ from scipy.cluster.vq import kmeans2
 import logging
 
 from reap.args import ClusterArgs
-from reap.cluster_plots import plot_cluster_analysis
+from reap.cluster_plots import plot_cluster_analysis, plot_expert_activation_distribution
 
 
 def get_penalty_vector(
@@ -856,6 +856,7 @@ if __name__ == "__main__":
     parser.add_argument("--expert_sim", type=str, default="router_logits", help="Expert similarity metric.")
     parser.add_argument("--cluster_method", type=str, default="agglomerative", help="Clustering method.")
     parser.add_argument("--distance_measure", type=str, default="cosine", help="Distance measure.")
+    parser.add_argument("--export_activations", action="store_true", help="Whether to export expert activation distributions.")
     
     args = parser.parse_args()
     
@@ -912,6 +913,10 @@ if __name__ == "__main__":
         elif args.cluster_method == "kmeans":
             labels = kmeans_clustering(dist.numpy(), target_clusters)
             cluster_labels[layer] = torch.tensor(labels)
+            
+    if args.export_activations:
+        print(f"Exporting expert activation distributions to {output_dir}...")
+        plot_expert_activation_distribution(observer_data, output_dir)
             
     print(f"Generating plots in {output_dir}...")
     plot_cluster_analysis(

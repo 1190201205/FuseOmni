@@ -3,10 +3,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import torch
 import warnings
+from typing import Any
+import numpy as np
+import pandas as pd
 
 def _save_fig(fig, plot_path: pathlib.Path):
     fig.savefig(f"{plot_path}.png", dpi=600, bbox_inches='tight')
-    fig.savefig(f"{plot_path}.pdf", dpi=600, bbox_inches='tight')
+    # fig.savefig(f"{plot_path}.pdf", dpi=600, bbox_inches='tight')
     
 def _plot_layer_clusters(cluster_label: torch.Tensor, plot_path: pathlib.Path):
     with warnings.catch_warnings():
@@ -88,3 +91,91 @@ def plot_cluster_analysis(
     ax.set_xlabel("Layer")
     ax.set_ylabel("Number of Remaining Experts")
     _save_fig(fig, plot_dir / "num_remaining_experts_per_layer")
+
+
+def plot_expert_activation_distribution(
+    observer_data: dict[int, dict[str, Any]],
+    output_dir: pathlib.Path,
+):
+    """
+    Plots expert activation distribution for each data source and saves to Excel.
+    
+    Args:
+        observer_data: The observation data containing expert frequencies.
+        output_dir: Directory to save the plots and Excel file.
+    """
+    activation_dir = output_dir / "activation_distributions"
+    activation_dir.mkdir(parents=True, exist_ok=True)
+    
+    layer_indices = sorted([k for k in observer_data.keys() if isinstance(k, int)])
+    if not layer_indices:
+        print("No layer data found in observer_data.")
+        return
+
+    # Identify all data sources across all layers
+    all_sources = set()
+    for layer in layer_indices:
+        if "expert_frequency_by_source" in observer_data[layer]:
+            all_sources.update(observer_data[layer]["expert_frequency_by_source"].keys())
+    
+    sources = sorted(list(all_sources))
+    plot_sources = sources + ["all"]
+    
+    num_experts = observer_data[layer_indices[0]]["expert_frequency"].shape[0]
+    
+    # Data containers for Excel export
+    # Key: source name, Value: DataFrame (Rows: Layer, Cols: Expert ID)
+    excel_data = {s: pd.DataFrame(index=layer_indices, columns=range(num_experts)) for s in plot_sources}
+
+    for layer in layer_indices:
+        layer_data = observer_data[layer]
+        freq_by_source = layer_data.get("expert_frequency_by_source", {})
+        
+        # Create subplots
+        n_plots = len(plot_sources)
+        cols = 3
+        rows = (n_plots + cols - 1) // cols
+        
+        fig, axes = plt.subplots(rows, cols, figsize=(cols * 6, rows * 4), squeeze=False)
+        plt.subplots_adjust(hspace=0.4, wspace=0.3)
+        
+        for i, source in enumerate(plot_sources):
+            r, c = i // cols, i % cols
+            ax = axes[r, c]
+            
+            if source == "all":
+                freq = layer_data["expert_frequency"].cpu().numpy()
+            else:
+                freq = freq_by_source.get(source, torch.zeros(num_experts, dtype=torch.long)).cpu().numpy()
+            
+            # Save to Excel data
+            excel_data[source].loc[layer] = freq
+            
+            # Plot
+            sns.barplot(x=list(range(num_experts)), y=freq, ax=ax)
+            ax.set_title(f"Source: {source}")
+            ax.set_xlabel("Expert ID")
+            ax.set_ylabel("Activation Frequency")
+            if num_experts > 32:
+                ax.set_xticks(range(0, num_experts, num_experts // 32 or 1))
+            ax.tick_params(axis='x', labelrotation=90)
+            
+        # Hide empty subplots
+        for i in range(n_plots, rows * cols):
+            r, c = i // cols, i % cols
+            axes[r, c].axis('off')
+            
+        fig.suptitle(f"Layer {layer} Expert Activation Distribution", fontsize=16)
+        _save_fig(fig, activation_dir / f"layer_{layer}_activation")
+        plt.close(fig)
+
+    # Save to Excel
+    excel_path = output_dir / "expert_activations.xlsx"
+    with pd.ExcelWriter(excel_path) as writer:
+        for source, df in excel_data.items():
+            # Use source name as sheet name (limit to 31 chars for Excel)
+            sheet_name = str(source)[:31]
+            df.to_excel(writer, sheet_name=sheet_name)
+    
+    print(f"Activation plots saved to {activation_dir}")
+    print(f"Activation data saved to {excel_path}")

@@ -80,14 +80,14 @@ def str_to_directory_name(s: str) -> str:
     return re.sub(r"[^\w\-_.]", "_", s)
 
 
-def create_results_directory(model_name: str, dataset_name: str) -> pathlib.Path:
+def create_results_directory(model_name: str, dataset_name: str, num_samples: int) -> pathlib.Path:
     """Create a clean directory name from model and dataset names."""
     model_clean = model_name.split("/")[-1]
     dataset_clean = dataset_name.split("/")[-1]
 
     # Create clean directory name by removing special characters
     model_clean = str_to_directory_name(model_clean)
-    dataset_clean = str_to_directory_name(dataset_clean)
+    dataset_clean = str_to_directory_name(dataset_clean) + str(num_samples)
 
     results_dir = pathlib.Path("./artifacts") / model_clean / dataset_clean
 
@@ -140,6 +140,15 @@ def record_activations(
                                 continue
                             if hasattr(merged_state[layer][k], 'merge'):
                                 merged_state[layer][k].merge(v)
+                            elif k == "expert_frequency_by_source":
+                                if k not in merged_state[layer]:
+                                    merged_state[layer][k] = v
+                                else:
+                                    for source, freq in v.items():
+                                        if source not in merged_state[layer][k]:
+                                            merged_state[layer][k][source] = freq
+                                        else:
+                                            merged_state[layer][k][source] += freq
                             else:
                                 merged_state[layer][k] += v
 
@@ -317,15 +326,20 @@ def record_activations(
                             sample = sample.to(model.device)
                         
                         if hasattr(model, "thinker"):
+                            observer.current_data_source = data_source
                             model.thinker(**sample)
                         else:
+                            observer.current_data_source = data_source
                             model(**sample)
                     else:
                         # Fallback for simple tensors
                         sample_to_device = sample.to(device=model.device, dtype=model.dtype if sample.is_floating_point() else None)
                         if hasattr(model, "thinker"):
+                             # Set the current data source in the observer
+                             observer.current_data_source = data_source
                              model.thinker(sample_to_device)
                         else:
+                            observer.current_data_source = data_source
                             model(sample_to_device)
             except Exception as e:
                 logger.error(f"Error processing category '{category}'")
@@ -381,6 +395,8 @@ def cluster(
     if cluster_args.singleton_super_experts or cluster_args.singleton_outlier_experts:
         super_expert_idx = get_super_expert_indices(data, include_last_layers=cluster_args.singleton_outlier_experts)
     for layer in tqdm(data, "Clustering experts..."):
+        if not isinstance(data[layer], dict):
+            continue
         expert_prob = data[layer]["expert_frequency"] / data[layer]["total_tokens"]
         ttm_sim_matrix = None
         try:
@@ -549,6 +565,8 @@ def merge(
         )
 
     for layer_idx, layer in enumerate(tqdm(cluster_labels, "Merging layers...")):
+        if layer not in observer_data or not isinstance(observer_data[layer], dict):
+            continue
         if merge_args.skip_first and layer_idx == 0:
             logger.info(
                 f"Skipping merging for layer {layer_idx} as per 'skip_first' argument."
@@ -763,7 +781,7 @@ def main():
         merge_args,
     ) = parse_args()
     set_seed(reap_args.seed)
-    results_dir = create_results_directory(model_args.model_name, ds_args.dataset_name)
+    results_dir = create_results_directory(model_args.model_name, ds_args.dataset_name, obs_args.samples_per_category)
 
     if cluster_args.singleton_super_experts and cluster_args.singleton_outlier_experts:
         raise ValueError(

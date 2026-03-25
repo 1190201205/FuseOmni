@@ -97,6 +97,9 @@ class BaseTransformerObserver(ABC):
         This is useful before saving the state to avoid GPU memory issues.
         """
         for layer_number, layer_state in self.state.items():
+            if not isinstance(layer_state, dict):
+                # Skip non-layer state items (e.g., "data_sources" list)
+                continue
             for key, value in layer_state.items():
                 if isinstance(value, torch.Tensor):
                     self.state[layer_number][key] = value.cpu()
@@ -227,18 +230,29 @@ class MoETransformerObserverConfig(BaseTransformerObserverHookConfig):
 class MoETransformerObserver(BaseTransformerObserver):
     """MoE Transformer Observer for all methods including both pruning and merging."""
 
+    def __init__(
+        self,
+        model,
+        hook_config: Optional[BaseTransformerObserverHookConfig] = None,
+    ):
+        super().__init__(model, hook_config)
+        self.current_data_source: str = "all"
+
     def report_state(self) -> dict[str, Any]:
         """
         Method to report the current state of the observer. Can be overridden to inject
         custom behaviours.
         """
-        return {
-            layer_num: {
-                k: v.mean if isinstance(v, OnlineStatsTracker) else v
-                for k, v in layer_state.items()
-            }
-            for layer_num, layer_state in self.state.items()
-        }
+        report = {}
+        for layer_num, layer_state in self.state.items():
+            if isinstance(layer_state, dict):
+                report[layer_num] = {
+                    k: v.mean if isinstance(v, OnlineStatsTracker) else v
+                    for k, v in layer_state.items()
+                }
+            else:
+                report[layer_num] = layer_state
+        return report
 
     def _initialize_state(self, output: torch.Tensor, num_experts: int):
         # get device and shape info
@@ -317,6 +331,9 @@ class MoETransformerObserver(BaseTransformerObserver):
             (num_experts,), device=device, dtype=torch.float64, requires_grad=False
         )
 
+        # per-source expert frequency
+        layer_state["expert_frequency_by_source"] = {}
+
         # super experts
         layer_state["max_activations"] = torch.zeros(
             (num_experts,), device=device, dtype=torch.float32, requires_grad=False
@@ -350,7 +367,7 @@ class MoETransformerObserver(BaseTransformerObserver):
                 self.state[layer_number] = self._initialize_state(output, num_experts)
             batch_size, sequence_length, hidden_dim = input.shape
             flat_input = input.view(-1, hidden_dim)  # total_seq_len, hidden
-            activations = torch.zeros((num_experts, *flat_input.shape), device=device)
+            activations = torch.zeros((num_experts, *flat_input.shape), device=device, dtype=input.dtype)
 
             if self.hook_config.fused_experts:
                 _, router_scores = output  # (num_experts, total_tokens)
@@ -401,6 +418,17 @@ class MoETransformerObserver(BaseTransformerObserver):
             self.state[layer_number]["expert_frequency"] += expert_frequency.to(
                 "cpu", torch.long
             )
+            
+            # Record per-source frequency
+            source = getattr(self, "current_data_source", "all")
+            if source not in self.state[layer_number]["expert_frequency_by_source"]:
+                self.state[layer_number]["expert_frequency_by_source"][source] = torch.zeros(
+                    num_experts, device="cpu", dtype=torch.long
+                )
+            self.state[layer_number]["expert_frequency_by_source"][source] += expert_frequency.to(
+                "cpu", torch.long
+            )
+
             self.state[layer_number]["pairwise_expert_frequency"] += (
                 pairwise_expert_frequency.to("cpu", torch.long)
             )

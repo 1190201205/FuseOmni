@@ -94,6 +94,8 @@ def prune(
     model_attrs = MODEL_ATTRS[model.__class__.__name__]
 
     for layer in observer_data:
+        if not isinstance(observer_data[layer], dict):
+            continue
         if "expert_proba" not in observer_data[layer]:
             # Calculate expert probabilities if not already present
             observer_data[layer]["expert_proba"] = (
@@ -114,6 +116,8 @@ def prune(
             "weighted_ean_sum_l2",
         ]
         for layer in observer_data:
+            if not isinstance(observer_data[layer], dict):
+                continue
             super_experts_in_layer = super_expert_idx[super_expert_idx[:, 0] == layer][:, 1]
             if len(super_experts_in_layer) > 0:
                 for metric in metrics:
@@ -121,6 +125,8 @@ def prune(
                         observer_data[layer][metric][super_experts_in_layer] = float("inf")
 
     for layer in tqdm(observer_data, "Pruning layers..."):
+        if not isinstance(observer_data[layer], dict):
+            continue
         num_experts = observer_data[layer]["expert_frequency"].shape[0]
         if prune_args.prune_method == "ean_ca":
             ean = torch.zeros(num_experts, device=model.device, dtype=torch.float32)
@@ -253,7 +259,7 @@ def main():
     if prune_args.perserve_super_experts and prune_args.perserve_outliers:
         raise ValueError("Only one of perserve_super_experts or perserve_outliers can be set to True.")
     set_seed(reap_args.seed)
-    results_dir = create_results_directory(model_args.model_name, ds_args.dataset_name)
+    results_dir = create_results_directory(model_args.model_name, ds_args.dataset_name, obs_args.samples_per_category)
 
     # get local patched model if req'd
     model_name = patched_model_map(model_args.model_name)
