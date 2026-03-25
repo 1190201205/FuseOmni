@@ -103,6 +103,58 @@ def create_results_directory(model_name: str, dataset_name: str) -> pathlib.Path
 def record_activations(
     model, tokenizer, reap_args, model_args, ds_args, obs_args, results_dir
 ):
+    if reap_args.merge_shards:
+        logger.info("Merging existing shard files into main observation file.")
+        categories = [d for d in results_dir.iterdir() if d.is_dir() and d.name not in ["pruned_models", "merged_models", "non_uniform_merged_models", "eval"]]
+        merged_cat_data = None
+        for cat_dir in categories:
+            shard_base = obs_args.output_file_name.replace('.pt', '')
+            shard_files = list(cat_dir.glob(f"{shard_base}_shard_*.pt"))
+            if not shard_files:
+                continue
+            
+            merged_state = None
+            merged_data_sources = []
+            for f in shard_files:
+                logger.info(f"Loading shard file: {f}")
+                with open(f, "rb") as fp:
+                    shard_data = torch.load(fp, weights_only=False)
+                
+                if "data_sources" in shard_data:
+                    merged_data_sources.extend(shard_data.pop("data_sources"))
+                elif "data_source" in shard_data:
+                    merged_data_sources.extend(shard_data.pop("data_source"))
+                
+                if merged_state is None:
+                    merged_state = shard_data
+                else:
+                    for layer, layer_state in shard_data.items():
+                        if not isinstance(layer_state, dict):
+                            continue
+                        if layer not in merged_state:
+                            merged_state[layer] = layer_state
+                            continue
+                        for k, v in layer_state.items():
+                            if k not in merged_state[layer]:
+                                merged_state[layer][k] = v
+                                continue
+                            if hasattr(merged_state[layer][k], 'merge'):
+                                merged_state[layer][k].merge(v)
+                            else:
+                                merged_state[layer][k] += v
+
+            if merged_state is not None:
+                merged_state["data_sources"] = merged_data_sources
+                merged_file = cat_dir / obs_args.output_file_name
+                logger.info(f"Saving merged state to {merged_file}")
+                with open(merged_file, "wb") as fp:
+                    torch.save(merged_state, fp)
+                merged_cat_data = merged_state
+        if merged_cat_data is not None:
+            return merged_cat_data
+        else:
+            logger.warning("No shards found to merge.")
+
     if ds_args.dataset_name == "combined":
         # just return the combined data
         cat_dir = results_dir / "all"
@@ -143,6 +195,11 @@ def record_activations(
         from transformers import Qwen3OmniMoeProcessor
         processor_obj = Qwen3OmniMoeProcessor.from_pretrained(model_args.model_name)
         logger.info(f"Loaded Qwen3OmniMoeProcessor for {model_args.model_name}")
+
+    if getattr(obs_args, 'num_shards', 1) > 1:
+        logger.info(f"Sharding dataset: {obs_args.num_shards} shards, using shard {obs_args.shard_idx}")
+        raw_ds = raw_ds.shard(num_shards=obs_args.num_shards, index=obs_args.shard_idx)
+        obs_args.output_file_name = f"{obs_args.output_file_name.replace('.pt', '')}_shard_{obs_args.shard_idx}.pt"
 
     # init processor & process dataset
     processor = proc_cls(
@@ -233,7 +290,14 @@ def record_activations(
                 continue
             try:
                 logger.info("No previous data found @ %s", f_name)
-                for sample in tqdm(cat_data, desc=f"Processing {category} samples"):
+                data_sources_for_cat = []
+                for item in tqdm(cat_data, desc=f"Processing {category} samples"):
+                    if isinstance(item, tuple) and len(item) == 2:
+                        sample, data_source = item
+                        data_sources_for_cat.append(data_source)
+                    else:
+                        sample = item
+                        
                     if isinstance(sample, (dict, Mapping)) or hasattr(sample, "to"):
                         # Handle dict-like or BatchEncoding inputs
                         if hasattr(sample, "to") and not isinstance(sample, (dict, Mapping)):
@@ -268,12 +332,14 @@ def record_activations(
                 logger.info(
                     f"Saving partial results for category '{category}' and exiting"
                 )
+                observer.state["data_sources"] = data_sources_for_cat
                 observer.save_state(cat_dir / "partial.pkl")
                 logger.info(
                     f"{category} data processed and saved to "
                     f"{cat_dir / obs_args.output_file_name}"
                 )
                 raise e
+            observer.state["data_sources"] = data_sources_for_cat
             observer.save_state(cat_dir / obs_args.output_file_name)
             observer.reset()
             logger.info(

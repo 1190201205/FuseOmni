@@ -37,6 +37,10 @@ class ReapArgs:
             )
         },
     )
+    merge_shards: bool = field(
+        default=False,
+        metadata={"help": "Whether to merge existing shard files instead of running observer."},
+    )
 
 
 @dataclass
@@ -145,6 +149,14 @@ class ObserverArgs:
                 "Whether to renormalize topk router weights to sum to 1 if the model.config.norm_topk_prob is True."
             )
         }, 
+    )
+    num_shards: int = field(
+        default=1,
+        metadata={"help": "Number of shards to split the dataset into."},
+    )
+    shard_idx: int = field(
+        default=0,
+        metadata={"help": "Index of the current shard."},
     )
 
 @dataclass

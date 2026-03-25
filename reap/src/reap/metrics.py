@@ -284,3 +284,28 @@ class OnlineStatsTracker:
         self.mean = t
         # End Kahan Summation
         self.count = updated_count
+
+    def merge(self, other: "OnlineStatsTracker"):
+        """Merge statistics from another online tracker."""
+        new_count = self.count + other.count
+        
+        # Handle count being scalar or tensor
+        if isinstance(new_count, torch.Tensor):
+            mask = new_count > 0
+            new_mean = self.mean.clone()
+            
+            if self.count.dim() < self.mean.dim():
+                c1 = self.count.view(*self.count.shape, *[1]*(self.mean.dim() - self.count.dim()))
+                c2 = other.count.view(*other.count.shape, *[1]*(other.mean.dim() - other.count.dim()))
+                tot = c1 + c2
+                mask_exp = tot > 0
+                new_mean[mask_exp] = (self.mean[mask_exp] * c1[mask_exp] + other.mean[mask_exp] * c2[mask_exp]) / tot[mask_exp]
+            else:
+                new_mean[mask] = (self.mean[mask] * self.count[mask] + other.mean[mask] * other.count[mask]) / new_count[mask]
+                
+            self.mean = new_mean
+            self.count = new_count
+        else:
+            if new_count > 0:
+                self.mean = (self.mean * self.count + other.mean * other.count) / new_count
+            self.count = new_count

@@ -240,7 +240,7 @@ class BaseDatasetProcessor(ABC):
                 encoded_sample = TokensPrompt(
                     prompt_token_ids=encoded_sample[0, :-1].tolist()
                 )
-            processed_samples.append(encoded_sample)
+            processed_samples.append((encoded_sample, sample.get("data_source", "none")))
         return processed_samples
 
     def _process_samples_for_category_packed(
@@ -285,7 +285,7 @@ class BaseDatasetProcessor(ABC):
                 )
             else:
                 encoded_sample = seq
-            processed_samples.append(encoded_sample)
+            processed_samples.append((encoded_sample, sample.get("data_source", "none")))
         return processed_samples
 
 
