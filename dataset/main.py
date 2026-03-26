@@ -17,6 +17,14 @@ import dataset.sources.aishell1.aishell1_dataset
 import dataset.sources.aishell3.aishell3_dataset
 import dataset.sources.voiceassistant400k.voiceassistant400k_dataset
 import dataset.sources.mmsu.mmsu_dataset
+import dataset.sources.librispeech.librispeech_dataset
+import dataset.sources.wenetspeech.wenetspeech_dataset
+import dataset.sources.fleurs.fleurs_dataset
+import dataset.sources.commonvoice.commonvoice_dataset
+import dataset.sources.audiocaps.audiocaps_dataset
+import dataset.sources.clotho.clotho_dataset
+import dataset.sources.openhermes25.openhermes25_dataset
+import dataset.sources.tulu3_sft_mixture.tulu3_sft_mixture_dataset
 
 
 class MultiDataset(BaseDataset):
@@ -57,16 +65,20 @@ class MultiDataset(BaseDataset):
             if not root:
                 raise ValueError(f"Dataset '{name}' is missing 'root' in config.")
                 
-            max_samples = cfg.get("max_samples") or None
-            split = cfg.get("split", "")
-            
             before = len(self.samples)
+            dataset_kwargs = {
+                key: value
+                for key, value in cfg.items()
+                if key not in {"enabled", "root"}
+            }
+            if dataset_kwargs.get("max_samples") == "":
+                dataset_kwargs["max_samples"] = None
+
             # 动态构建注册的数据集
             ds = build_dataset(
                 name=name,
                 dataset_root=root,
-                split=split,
-                max_samples=max_samples
+                **dataset_kwargs,
             )
             self.samples.extend(ds.samples)
             print(f"[{name}] loaded {len(self.samples) - before} samples")

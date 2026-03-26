@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Sequence
 
 try:
     from torch.utils.data import Dataset as TorchDataset
@@ -62,3 +62,47 @@ class BaseDataset(TorchDataset):
                 handle.write(json.dumps(sample, ensure_ascii=False) + "\n")
                 count += 1
         return output_path
+
+    @staticmethod
+    def normalize_selection(value: str | Sequence[str] | None) -> List[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(",") if item.strip()]
+
+        normalized: List[str] = []
+        for item in value:
+            text = str(item).strip()
+            if text:
+                normalized.append(text)
+        return normalized
+
+    @staticmethod
+    def load_jsonl_paths(
+        jsonl_paths: Sequence[str | Path],
+        max_samples: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        samples: List[Dict[str, Any]] = []
+
+        for raw_path in jsonl_paths:
+            jsonl_path = Path(raw_path).expanduser().resolve()
+            if not jsonl_path.is_file():
+                raise FileNotFoundError(f"JSONL file not found: {jsonl_path}")
+
+            with jsonl_path.open("r", encoding="utf-8") as handle:
+                for line_index, raw_line in enumerate(handle, start=1):
+                    if max_samples is not None and len(samples) >= max_samples:
+                        return samples
+
+                    line = raw_line.strip()
+                    if not line:
+                        continue
+
+                    try:
+                        samples.append(json.loads(line))
+                    except json.JSONDecodeError as exc:
+                        raise ValueError(
+                            f"Invalid JSONL at {jsonl_path}:{line_index}"
+                        ) from exc
+
+        return samples

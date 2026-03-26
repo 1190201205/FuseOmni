@@ -53,7 +53,10 @@ The **"Perpetual Motion Machine"** for SCO ACP clusters:
 Specialized loaders and metadata for multi-modal speech datasets:
 - **AISHELL-1/3**: Standard speech recognition and synthesis datasets.
 - **MMSU**: Multi-modal speech understanding benchmarks.
-- **Multi-Dataset Support**: Unified configuration-driven loading via `multi_dataset.py`.
+- **LibriSpeech / WenetSpeech / FLEURS / Common Voice**: Config-driven ASR dataset loaders.
+- **AudioCaps / Clotho**: Audio captioning datasets backed by processed manifests.
+- **OpenHermes-2.5 / Tulu-3 SFT Mixture**: Text SFT datasets backed by processed jsonl shards.
+- **Multi-Dataset Support**: Unified configuration-driven loading via `python -m dataset.main`.
 
 ---
 

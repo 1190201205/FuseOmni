@@ -30,6 +30,21 @@ python -m dataset.main
 python -m dataset.main --config /path/to/custom_config.yaml --output processed_data.jsonl
 ```
 
+当前已经接入的规范化数据集包括：
+
+- `aishell1`
+- `aishell3`
+- `voiceassistant400k`
+- `mmsu`
+- `librispeech`
+- `wenetspeech`
+- `fleurs`
+- `commonvoice`
+- `audiocaps`
+- `clotho`
+- `openhermes25`
+- `tulu3_sft_mixture`
+
 ## 怎样新增一个数据集处理类
 
 当需要往项目中兼容新的数据集数据格式（举例：`new_dataset`），请遵循以下规范：
@@ -74,7 +89,7 @@ python -m dataset.main --config /path/to/custom_config.yaml --output processed_d
    ```
 
 4. **挂载配置 YAML**：
-   最后前往配置文件 `multi_dataset_config.yaml`。基于设定的别名 `new_dataset` 进行节点添加与分配数据集的存放空间 `root` 以及相关参数。
+   最后前往配置文件 `multi_dataset_config.yaml`。基于设定的别名 `new_dataset` 进行节点添加与分配数据集的存放空间 `root` 以及相关参数。当前 `main.py` 会将除 `enabled` 和 `root` 以外的字段作为 `kwargs` 透传给对应数据集构造函数，所以像 `split`、`subset`、`language`、`metadata_name` 这类参数都可以直接由 YAML 驱动。
 
 
 ## 进一步新增 Feature 的规范

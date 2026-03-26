@@ -28,6 +28,56 @@ datasets:
     root: /mnt/afs/share/voice_model_project/datasets/MMSU
     max_samples: 2000     # null 表示加载全部
 
+  librispeech:
+    enabled: false
+    root: /mnt/afs/share/voice_model_project/datasets/LibriSpeech
+    subset: train-clean-100
+    max_samples: 2000
+
+  wenetspeech:
+    enabled: false
+    root: /mnt/afs/share/voice_model_project/datasets/WenetSpeech
+    subset: L
+    max_samples: 2000
+
+  fleurs:
+    enabled: false
+    root: /mnt/afs/share/voice_model_project/datasets/FLEURS
+    split: train
+    language: en_us
+    max_samples: 2000
+
+  commonvoice:
+    enabled: false
+    root: /mnt/afs/share/voice_model_project/datasets/CommonVoice
+    split: train
+    language: zh-TW
+    max_samples: 2000
+
+  audiocaps:
+    enabled: false
+    root: /mnt/afs/share/voice_model_project/datasets/AudioCaps
+    split: train
+    max_samples: 2000
+
+  clotho:
+    enabled: false
+    root: /mnt/afs/share/voice_model_project/datasets/Clotho
+    split: train
+    max_samples: 2000
+
+  openhermes25:
+    enabled: false
+    root: /mnt/afs/share/voice_model_project/datasets/OpenHermes-2___5
+    max_samples: 2000
+
+  tulu3_sft_mixture:
+    enabled: false
+    root: /mnt/afs/share/voice_model_project/datasets/tulu-3-sft-mixture
+    split: train
+    subset: ""
+    max_samples: 2000
+
 # 输出配置
 output:
   shuffle: true           # 合并后是否随机打乱
