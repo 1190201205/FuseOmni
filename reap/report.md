@@ -118,7 +118,9 @@ CUDA_VISIBLE_DEVICES=$MERGE_CUDA python src/reap/prune.py \
 
 * **`--prune_method reap` (剪枝方法)**：
   这是本实验的关键。在该模式下，系统会为每个专家计算 **REAP 显著性评分**：
-  $$\text{Score} = \text{Mean}(\text{Activation\_Norm} \times \text{Router\_Weight})$$
+  
+  $$\text{Score} = \text{Mean}(\text{ActivationNorm} \times \text{RouterWeight})$$
+  
   该指标综合了专家在各 Token 上的激活幅度和路由器的置信度，评分最低的专家将被优先剪掉。具体计算过程为：
   * **Activation_Norm（激活范数）**：对于每个被选中的专家，获取其输出层（MLP）的激活值张量，并在隐藏维度（Hidden Dimension）上计算 **L2 范数**。它衡量了该专家对模型隐藏状态修改的“绝对强度”。
   * **Router_Weight（路由权重）**：指路由器（Router）经过 **Softmax** 层后分配给该专家的概率值。这代表了模型在决策层面对于调用该专家的“置信度”。（若开启重归一化，则为 Top-K 专家间的相对概率）。
