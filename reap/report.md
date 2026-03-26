@@ -17,31 +17,61 @@
 *   `src/reap/data.py`: 数据预处理模块。包含各类 `DatasetProcessor`，负责将原始数据转换为符合模型 Chat Template 的 Token 序列。
 *   `src/reap/prune.py`: 剪枝逻辑入口，支持直接通过显著性排序移除专家并更新模型权重。
 
-## 3. Omni 模型剪枝实现路径
+## 3. Omni 模型剪枝历史改动总结
 
-针对 `Qwen3-Omni-30B-A3B-Instruct` 模型的特殊性，本次修改重点在于支持其 `thinker` 模块的文本专家剪枝。
+针对 `Qwen3-Omni-30B-A3B-Instruct` 等多模态大模型的特殊性，历史对该仓库进行了深入的适配与优化，重点支持了其特定模块（如 `thinker` 模块）的文本专家剪枝与性能分析。主要改动包括：
 
-### 3.1 模型架构适配
-*   **模型类支持**：`Qwen3-Omni` 属于 `Qwen3OmniMoeForConditionalGeneration` 类，标准 `AutoModelForCausalLM` 无法加载。
-*   **路径补丁**：在 `model_util.py` 中新增 `MODEL_ATTRS` 条目，并将 `get_moe` 函数修改为支持 `model.thinker.model.layers` 的多级路径，以精准定位 `thinker` 模块。
-*   **Hook 注入**：在 `observer.py` 中新增 `Qwen3OmniMoEObserverHookConfig`，将 Hook 绑定至 `Qwen3OmniMoeThinkerTextSparseMoeBlock`。
+### 3.1 模型架构与 Hook 适配
+*   **路径与 Hook 注入**：在 `model_util.py` 的 `MODEL_ATTRS` 中新增路径补丁，支持 `model.thinker.model.layers` 的多级路径定位。在 `observer.py` 中新增 `Qwen3OmniMoEObserverHookConfig`，将 Hook 精准绑定至 `Qwen3OmniMoeThinkerTextSparseMoeBlock` 等核心层。
+*   **自动加载机制**：解决了 `transformers` `AutoModel` 映射缺失问题，通过显式指定模型类加载模型权重。
 
-### 3.2 自定义数据集加载
-*   **多模态解析**：针对 `train.jsonl`，在 `data.py` 中新增 `FuseOmniChatDataset` 类。其生成的 `_map_fn` 可自动将原始 JSON 里的 `audio_path` 和 `text` 字段转化为符合 QwenTokenizer 预期的内容列表。
-*   **本地文件支持**：修改 `main.py` 的加载逻辑，当检测到以 `.jsonl` 结尾的 `--dataset_name` 时，自动采用 `load_dataset('json')` 进行本地加载。
+### 3.2 大规模数据与多卡并行支持 (Sharding)
+*   **多卡分片收集**：修改了激活收集流水线，支持数据集在多 GPU 间的分片 (Sharding) 和并行处理。
+*   **内存优化与状态序列化**：重构了 `observer.py` 与 `main.py` 中的内存管理与状态保存逻辑，修复了特征收集过程中因张量积压导致的 `CUDA OutOfMemoryError` 报错和格式冲突引起的 `AttributeError` 报错。各分片计算完成后，能够稳定地保存并在主进程中合并结果。
 
-### 3.3 执行脚本
-*   创建 `experiments/prune-qwen3-omni.sh`。该脚本封装了复杂的参数传递，允许用户通过简单的单一命令执行针对 `thinker` 模块的剪枝流程。
+### 3.3 专家激活可视化与自动化流水线
+*   **数据源细粒度分析**：在收集和保存专家激活记录时，引入了 `data_source` 字段，不仅统计总体趋势，还支持区分不同来源数据（如代码、数学、日常对话）对专家的激活情况。
+*   **图表绘制与数据导出**：在绘图逻辑中补充了支持，生成按 `data_source` 划分的逐层专家激活分布柱状图，并能将统计信息导出为结构化的 Excel/CSV 文件以供深入分析。
+*   **流水线融合**：将原先独立的收集与绘图脚本整合为统一步骤，实现了“剪枝激活统计-结果绘图-聚类分析”的一键式自动化执行。
 
-## 4. 遇到的 Bug 与解决方案
+## 4. 新增未知 Omni 模型与新数据集支持经验总结
 
-| 遇到的问题 | 根本原因 | 解决方案 |
+### 4.1 新增未知 Omni 模型支持指南
+
+当接入一款全新的、结构未知的 Omni 模型时，应遵循以下适配工作流：
+
+1.  **确定模型架构类型与类名**：
+    *   不要直接信赖 `AutoModel` 的默认推断。编写探针代码（直接打印 `model` 对象实例的结构），明确目标任务层被封装的确切 Class Name（例如除了标准的 LLM backbone，模型内部可能会带有类似 `model.thinker` 或 `model.vision_tower` 的嵌套 Wrapper）。
+2.  **配置 `MODEL_ATTRS` 路径解析机制**：
+    *   在 `src/reap/model_util.py` 中为目标模型补充对应的类名配置项。
+    *   梳理并明确 `mlp`, `gate`, `experts` 在该模型特定 MoE 层中的变量名。若是采用了深度嵌套的 MoE 模块，需要在 `get_moe` 等核心访问函数中添加多层级的属性穿透（如利用 `hasattr` 递归解析或显式的路由匹配）。
+3.  **定制专属的 `HookConfig`**：
+    *   在 `observer.py` 中继承通用 Observer 基类，并增加属于该模型的 `HookConfig`。
+    *   利用精确的正则匹配或者类型匹配（如 `.*SparseMoeBlock$`），确保 Forward Hook 挂载到了正确的专家路由层（Router）和整体块输出位置。
+4.  **跨模态输入的对齐操作**：
+    *   涉及到带有视觉或听觉感知编码的 Omni 模型时，确保数据流在进入 MoE Router 之前，音频/图像表征已被正确对齐和摊平（Flatten）为 Token 级别。注意某些模型可能对特定模态的 Token 不执行 MoE 路由或不需要参与剪枝评分，需针对性设计掩码（Mask）或过滤逻辑。
+
+### 4.2 数据集加载框架重构与新数据集形态支持经验
+
+随着多模态输入的介入，单文本加载已不再满足需求。针对新模态数据集的适配主要得益于加载框架的重构：
+
+1.  **YAML 配置化与基类解耦**：
+    *   抛弃硬编码的数据集判断分支。改为使用独立的 YAML 配置文件来统一定义数据集来源和格式。
+    *   系统采用面向对象的设计：统一的数据加载入口会根据配置动态实例化专门的 `DatasetProcessor`，不同的数据集在独立子目录中维护各自的处理子类。
+2.  **应对多模态混合数据的映射开发 (`_map_fn`)**：
+    *   **开发核心**：引入包含非文本数据（如音频、图像数据的引用形式如 JSONL）时，不可直接喂给模型。开发者在继承自基类的新 Dataset 类中，需重点维护 `_map_fn` 或相关的转换映射规则。
+    *   **协议转译**：如在含有 `audio_path` 的输入项中，`_map_fn` 应负责将独立的音频路径和纯文本说明拼接组装成所用 Tokenizer 能够直接接收的协议格式（如 `[{"type": "audio", "audio_url": ...}, {"type": "text", "text": ...}]` ），确保其与原生 Chat Template 完全贴合。
+3.  **大体量迭代过程中的异常容错**：
+    *   多模态数据的 IO 操作繁重（如硬盘读取音频），因此应当在重用和加载时补充异常捕获与破损文件跳过（Skip）逻辑，保障集群下分布式训练/统计能够连续不崩溃执行。
+
+## 5. 遇到的核心 Bug 汇总与分析
+
+| 遇到的难点 / 报错 | 根本原因剖析 | 应对方案与修复措施 |
 | :--- | :--- | :--- |
-| **AutoModel 加载失败** | `transformers` 的 `AutoModel` 映射中未包含该特定类。 | 显式从 `transformers` 导入 `Qwen3OmniMoeForConditionalGeneration` 并使用 `.from_pretrained`。 |
-| **MoE 模块获取为空** | 默认代码检索 `model.model.layers`，而 Omni 模型封装了 `thinker` 层。 | 修改 `model_util.py` 中的 `get_moe` 逻辑，增加对 `thinker` 成员的判断。 |
-| **模块类名匹配失效** | 模型层实际类名与通用 Qwen 架构略有不同。 | 使用 Python 探针脚本确认各层 Class Name，将 `HookConfig` 中的正则匹配更新为 `Qwen3OmniMoeThinkerTextSparseMoeBlock`。 |
-| **JSONL 解析异常** | 原始 JSONL 里的 `messages` 结构是多模态子列表形式。 | 在 `data.py` 中实现定制化的 `_map_fn` 逻辑，显式转换 `audio_path` 路径映射。 |
-| **环境依赖缺失** | 运行环境缺少 `datasets` 或 `accelerate`。 | 记录并提示用户补全必要的 Python 库依赖。 |
+| **CUDA OOM 溢出** | 统计观察者会盲目将大批量的原始激活张量堆积在内存堆栈中，长序列时极易耗尽显存。| 在 `observer.py` 获取阶段度量指标之后，采用 `.detach().cpu()` 即时分离计算图并按需转移至内存，同时改用增量更新替代全量堆积合并策略。|
+| **基于 `data_source` 结构的 AttributeError** | 老模型保存的状态文件是平铺的 List，新逻辑引入数据源区分后将嵌套形式改为了 Dictionary，进而引发 `list object has no attribute items`。 | 增加版本探测和容错兼容：当读取到老版本非 `.items()` 数据或遇到不支持的元数据时，主动降级采用默认的全局融合分支执行解析。 |
+| **MoE 模块检索返回空集** | 默认适配器只检索 `model.model.layers`，而 Omni 这类架构会将业务层封存在如 `thinker` 的嵌套属性中。 | 修改 `model_util.py` 检索器，增设多级探测器：一旦探测到特殊 Wrapper 成员即时调整查找路径。 |
+| **JSONL 特殊结构引发转换中断** | 在 `messages` 的键位里，直接混杂了多模态特定的结构（如 `audio_path` 引用）。 | 开发专有数据处理器对数据结构做预压平和结构重排，将媒体资源与提示指令转为标准的数组序列。 |
 
 ---
-**实验结论**：通过上述路径，REAP 现在能够正确识别多模态模型的思维 (Thinker) 核心并进行专家显著性分析，成功将传统文本 MoE 剪枝能力扩展至多模态混合模型。
+**阶段结论**：历史经历的一系列改动彻底实现了 REAP 系统在处理对象（从纯文本向复杂多模态 Omni 转变）和处理规模（多卡 Sharding 支持、超大规模数据源细分统计）上的跨越。基于 YAML 驱动的高度内聚、低耦合数据加载框架，为未来接入各类未知领域前沿大模型与异构多模态数据集夯实了基础设施工程能力。

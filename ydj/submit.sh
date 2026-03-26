@@ -55,7 +55,11 @@ echo "Queue:  ${QUEUE_ROOT}/${JOB_ID}/"
 echo "Code:   ${CODE_DIR}"
 echo ""
 
-sco acp jobs create \
+# Create the queue directory if it doesn't exist
+mkdir -p "${QUEUE_ROOT}/${JOB_ID}"
+
+echo "Creating SCO ACP job..."
+REAL_JOB_ID=$(sco acp jobs create \
   --workspace-name=share-space \
   --aec2-name=share-cluster \
   --job-name=${JOB_ID} \
@@ -69,7 +73,14 @@ sco acp jobs create \
     export JOB_ID=${JOB_ID}; \
     export QUEUE_ROOT=${QUEUE_ROOT}; \
     cd ${CODE_DIR}; \
-    python perpetual_motion.py --job-id ${JOB_ID} --queue-root ${QUEUE_ROOT}"
+    python perpetual_motion.py --job-id ${JOB_ID} --queue-root ${QUEUE_ROOT}" | grep -o 'pt-[a-z0-9]\{8\}' | head -1)
+
+if [ -n "$REAL_JOB_ID" ]; then
+    echo "$REAL_JOB_ID" > "${QUEUE_ROOT}/${JOB_ID}/job_id.txt"
+    echo "Cluster Job ID: $REAL_JOB_ID (saved to ${JOB_ID}/job_id.txt)"
+else
+    echo "WARNING: Could not capture real Job ID from sco output."
+fi
 
 echo ""
 echo "=========================================="

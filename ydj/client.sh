@@ -131,7 +131,16 @@ gpu_status() {
     
     # Current task
     if [ -f "$CONTROL_FILE" ]; then
-        echo "Control: $(cat "$CONTROL_FILE")"
+        local status=$(python3 -c "import json; print(json.load(open('$CONTROL_FILE')).get('status', 'unknown'))" 2>/dev/null || echo "unknown")
+        local current=$(python3 -c "import json; print(json.load(open('$CONTROL_FILE')).get('current_task', 'None'))" 2>/dev/null || echo "None")
+        
+        local color=""
+        if [ "$status" = "running" ]; then color="\033[0;32m"; fi      # Green
+        if [ "$status" = "idle" ]; then color="\033[0;36m"; fi         # Cyan
+        local reset="\033[0m"
+        
+        echo -e "Status:  ${color}${status}${reset}"
+        echo "Current Task: ${current}"
     else
         echo "Control: (not initialized - perpetual motion not running?)"
     fi
@@ -192,12 +201,18 @@ gpu_list() {
             local control="${dir}control.json"
             local pending_count=$(ls -1 "${dir}pending" 2>/dev/null | wc -l)
             local status="unknown"
-            
             if [ -f "$control" ]; then
                 status=$(python3 -c "import json; print(json.load(open('$control')).get('status', 'unknown'))" 2>/dev/null || echo "unknown")
             fi
+
+            local color=""
+            if [ "$status" = "running" ]; then color="\033[0;32m"; fi      # Green
+            if [ "$status" = "idle" ]; then color="\033[0;36m"; fi         # Cyan
+            if [ "$status" = "shutdown" ]; then color="\033[0;33m"; fi     # Yellow
+            if [ "$status" = "stopped" ]; then color="\033[0;31m"; fi      # Red
+            local reset="\033[0m"
             
-            printf "  %-20s  status: %-10s  pending: %d\n" "$name" "$status" "$pending_count"
+            printf "  %-20s  status: ${color}%-10s${reset}  pending: %d\n" "$name" "$status" "$pending_count"
         fi
     done
     
@@ -226,13 +241,15 @@ gpu_stop() {
         # Signal stop to running task and kill all Python processes
         if [ -f "$CONTROL_FILE" ]; then
             local current=$(python3 -c "import json; print(json.load(open('$CONTROL_FILE')).get('current_task', ''))" 2>/dev/null)
+            local status=$(python3 -c "import json; print(json.load(open('$CONTROL_FILE')).get('status', 'idle'))" 2>/dev/null)
+            
             if [ -n "$current" ] && [ "$current" != "None" ]; then
-                echo "{\"status\": \"running\", \"current_task\": \"$current\", \"stop_task\": \"$current\", \"kill_python\": true, \"job_id\": \"$JOB_ID\"}" > "$CONTROL_FILE"
+                echo "{\"status\": \"$status\", \"current_task\": \"$current\", \"stop_task\": \"$current\", \"kill_python\": true, \"job_id\": \"$JOB_ID\"}" > "$CONTROL_FILE"
                 echo "Stop signal sent to: $current"
                 echo "Kill Python processes signal sent"
             else
                 # No current task, just send kill_python signal
-                echo "{\"status\": \"running\", \"current_task\": null, \"kill_python\": true, \"job_id\": \"$JOB_ID\"}" > "$CONTROL_FILE"
+                echo "{\"status\": \"$status\", \"current_task\": null, \"kill_python\": true, \"job_id\": \"$JOB_ID\"}" > "$CONTROL_FILE"
                 echo "Kill Python processes signal sent"
             fi
         fi
@@ -252,8 +269,9 @@ gpu_stop() {
             # Check if running (signal stop)
             if [ -f "$CONTROL_FILE" ]; then
                 local current=$(python3 -c "import json; print(json.load(open('$CONTROL_FILE')).get('current_task', ''))" 2>/dev/null)
+                local status=$(python3 -c "import json; print(json.load(open('$CONTROL_FILE')).get('status', 'idle'))" 2>/dev/null)
                 if [[ "$current" == *"$target"* ]]; then
-                    echo "{\"status\": \"running\", \"current_task\": \"$current\", \"stop_task\": \"$current\", \"kill_python\": true, \"job_id\": \"$JOB_ID\"}" > "$CONTROL_FILE"
+                    echo "{\"status\": \"$status\", \"current_task\": \"$current\", \"stop_task\": \"$current\", \"kill_python\": true, \"job_id\": \"$JOB_ID\"}" > "$CONTROL_FILE"
                     echo "Stop signal sent to running task: $current"
                     echo "Kill Python processes signal sent"
                     return 0
@@ -309,9 +327,21 @@ gpu_tail() {
 
 # ==================== Shutdown Perpetual Motion ====================
 gpu_shutdown() {
+    # Try to get the real Job ID (pt-xxxxx)
+    local real_id="$JOB_ID"
+    if [ -f "${QUEUE_BASE}/job_id.txt" ]; then
+        real_id=$(cat "${QUEUE_BASE}/job_id.txt")
+    elif command -v sco >/dev/null 2>&1; then
+        # Try to find it from sco list if the file doesn't exist
+        local found_id=$(sco acp jobs list --workspace-name=share-space --page-size 500 2>/dev/null | awk -v name=" ${JOB_ID} " -F'|' '$3 == name {print $2}' | tr -d '[:space:]' | grep "^pt-" | head -1)
+        if [ -n "$found_id" ]; then
+            real_id="$found_id"
+        fi
+    fi
+
     echo "{\"status\": \"shutdown\", \"current_task\": null, \"job_id\": \"$JOB_ID\"}" > "$CONTROL_FILE"
     echo "Shutdown signal sent to: $JOB_ID"
-    echo "Remember to delete the SCO ACP job: sco acp jobs delete --workspace-name=share-space ${JOB_ID}"
+    echo "Remember to delete the SCO ACP job: sco acp jobs delete --workspace-name=share-space ${real_id}"
 }
 
 # ==================== Help ====================

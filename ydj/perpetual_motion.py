@@ -45,6 +45,7 @@ DONE_DIR = os.path.join(QUEUE_BASE, "done")
 FAILED_DIR = os.path.join(QUEUE_BASE, "failed")
 LOG_DIR = os.path.join(QUEUE_BASE, "logs")
 CONTROL_FILE = os.path.join(QUEUE_BASE, "control.json")
+JOB_ID_FILE = os.path.join(QUEUE_BASE, "job_id.txt")
 
 # GPU settings
 GPU_UTIL_THRESHOLD = 50  # Start dummy workload if GPU util < this
@@ -335,7 +336,7 @@ def init_queue():
     
     # Initialize control file
     if not os.path.exists(CONTROL_FILE):
-        write_control({"status": "running", "current_task": None, "job_id": JOB_ID})
+        write_control({"status": "idle", "current_task": None, "job_id": JOB_ID})
     
     print(f"[INFO] Queue initialized at {QUEUE_BASE}")
     print(f"[INFO] JOB_ID: {JOB_ID}")
@@ -356,7 +357,7 @@ def read_control():
         with open(CONTROL_FILE, 'r') as f:
             return json.load(f)
     except:
-        return {"status": "running", "current_task": None, "job_id": JOB_ID}
+        return {"status": "idle", "current_task": None, "job_id": JOB_ID}
 
 
 def get_pending_tasks():
@@ -421,6 +422,15 @@ def execute_task(task_name, task_path):
             # Monitor for stop signal
             while process.poll() is None:
                 control = read_control()
+                if control.get("status") == "shutdown":
+                    print(f"[TASK] Shutdown requested during task: {task_name}")
+                    process.terminate()
+                    time.sleep(2)
+                    if process.poll() is None:
+                        process.kill()
+                    log.write(f"\n=== Task terminated due to shutdown request ===\n")
+                    break
+                
                 if control.get("stop_task") == task_name:
                     print(f"[TASK] Stop requested for: {task_name}")
                     process.terminate()
@@ -451,16 +461,29 @@ def execute_task(task_name, task_path):
         if os.path.exists(running_path):
             os.rename(running_path, dest)
     
-    # Clear current task
-    write_control({"status": "running", "current_task": None})
+    # Clear current task, but preserve shutdown status
+    control = read_control()
+    if control.get("status") == "shutdown":
+        write_control({"status": "shutdown", "current_task": None})
+    else:
+        write_control({"status": "idle", "current_task": None})
     
     # Restart GPU keepers after task completes
     print(f"[TASK] Restarting GPU keepers...")
     start_gpu_keepers()
 
 
+def handle_sigterm(signum, frame):
+    """Handle SIGTERM from cluster manager"""
+    print(f"\n[INFO] Received SIGTERM (signum={signum}), cleaning up...")
+    # Raising KeyboardInterrupt will trigger the finally block in main_loop
+    raise KeyboardInterrupt
+
 def main_loop():
     """Main queue monitoring loop"""
+    # Register SIGTERM handler
+    signal.signal(signal.SIGTERM, handle_sigterm)
+    
     start_time = datetime.now()
     shutdown_time = start_time + timedelta(hours=AUTO_SHUTDOWN_HOURS)
     
@@ -487,15 +510,21 @@ def main_loop():
             
             # Check control file for shutdown or kill_python signal
             control = read_control()
-            if control.get("status") == "shutdown":
+            status = control.get("status")
+            
+            if status == "shutdown":
                 print("[INFO] Shutdown requested")
+                break
+            
+            if status == "stopped":
+                print("[INFO] Machine already stopped")
                 break
             
             # Check for kill_python signal
             if control.get("kill_python"):
                 print("[INFO] Kill Python processes requested")
                 kill_other_python_processes()
-                # Clear the signal
+                # Clear the signal, but preserve idle/running status
                 control["kill_python"] = False
                 write_control(control)
             
@@ -512,7 +541,12 @@ def main_loop():
         print("\n[INFO] Shutting down...")
     finally:
         stop_gpu_keepers()
-        write_control({"status": "stopped", "current_task": None})
+        # Clear control and job ID files to avoid stale status
+        print(f"[INFO] Clearing metadata files: {CONTROL_FILE}, {JOB_ID_FILE}")
+        if os.path.exists(CONTROL_FILE):
+            os.remove(CONTROL_FILE)
+        if os.path.exists(JOB_ID_FILE):
+            os.remove(JOB_ID_FILE)
 
 
 # ==================== Entry Point ====================
@@ -540,5 +574,6 @@ if __name__ == "__main__":
     FAILED_DIR = os.path.join(QUEUE_BASE, "failed")
     LOG_DIR = os.path.join(QUEUE_BASE, "logs")
     CONTROL_FILE = os.path.join(QUEUE_BASE, "control.json")
+    JOB_ID_FILE = os.path.join(QUEUE_BASE, "job_id.txt")
     
     main_loop()
