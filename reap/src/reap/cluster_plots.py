@@ -6,6 +6,7 @@ import warnings
 from typing import Any
 import numpy as np
 import pandas as pd
+import matplotlib.ticker as ticker
 
 def _save_fig(fig, plot_path: pathlib.Path):
     fig.savefig(f"{plot_path}.png", dpi=600, bbox_inches='tight')
@@ -144,9 +145,14 @@ def plot_expert_activation_distribution(
             ax = axes[r, c]
             
             if source == "all":
-                freq = layer_data["expert_frequency"].cpu().numpy()
+                freq = layer_data["expert_frequency"].cpu().numpy().astype(np.float32)
             else:
-                freq = freq_by_source.get(source, torch.zeros(num_experts, dtype=torch.long)).cpu().numpy()
+                freq = freq_by_source.get(source, torch.zeros(num_experts, dtype=torch.long)).cpu().numpy().astype(np.float32)
+            
+            # Normalize to percentage
+            total_freq = freq.sum()
+            if total_freq > 0:
+                freq = (freq / total_freq) * 100
             
             # Save to Excel data
             excel_data[source].loc[layer] = freq
@@ -155,7 +161,11 @@ def plot_expert_activation_distribution(
             sns.barplot(x=list(range(num_experts)), y=freq, ax=ax)
             ax.set_title(f"Source: {source}")
             ax.set_xlabel("Expert ID")
-            ax.set_ylabel("Activation Frequency")
+            ax.set_ylabel("Activation Frequency (%)")
+            
+            # Ensure integer ticks for y-axis
+            ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+            
             if num_experts > 32:
                 ax.set_xticks(range(0, num_experts, num_experts // 32 or 1))
             ax.tick_params(axis='x', labelrotation=90)
