@@ -16,6 +16,7 @@ class AIShell1Dataset(BaseDataset):
         "dev": "speech_asr_aishell_devsets.csv",
         "test": "speech_asr_aishell_testsets.csv",
     }
+    _ASR_INSTRUCTION = BaseDataset.build_asr_instruction("Chinese")
 
     def __init__(self, dataset_root: str | Path, split: str = "", max_samples: int | None = None, **kwargs: Any) -> None:
         super().__init__("aishell1", dataset_root, **kwargs)
@@ -65,7 +66,7 @@ class AIShell1Dataset(BaseDataset):
                                 "role": "user",
                                 "content": [
                                     {
-                                        "text": None,
+                                        "text": self._ASR_INSTRUCTION,
                                         "audio_path": f"/mnt/afs/share/voice_model_project/datasets/AIShell-1/{audio_rel_path}",
                                     }
                                 ],

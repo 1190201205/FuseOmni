@@ -34,6 +34,8 @@ python -m dataset.main --config /path/to/custom_config.yaml --output processed_d
 
 - `aishell1`
 - `aishell3`
+- `libritts`
+- `vctk`
 - `voiceassistant400k`
 - `mmsu`
 - `librispeech`

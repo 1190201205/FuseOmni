@@ -17,13 +17,20 @@ import dataset.sources.audiocaps.audiocaps_dataset  # noqa: F401
 import dataset.sources.clotho.clotho_dataset  # noqa: F401
 import dataset.sources.commonvoice.commonvoice_dataset  # noqa: F401
 import dataset.sources.fleurs.fleurs_dataset  # noqa: F401
+import dataset.sources.libritts.libritts_dataset  # noqa: F401
 import dataset.sources.librispeech.librispeech_dataset  # noqa: F401
+import dataset.sources.musan.musan_dataset  # noqa: F401
 import dataset.sources.openhermes25.openhermes25_dataset  # noqa: F401
+import dataset.sources.spoken_squad.spoken_squad_dataset  # noqa: F401
 import dataset.sources.tulu3_sft_mixture.tulu3_sft_mixture_dataset  # noqa: F401
+import dataset.sources.ultrachat.ultrachat_dataset  # noqa: F401
+import dataset.sources.vctk.vctk_dataset  # noqa: F401
 import dataset.sources.wenetspeech.wenetspeech_dataset  # noqa: F401
 
 
 NEW_DATASETS = [
+    "libritts",
+    "vctk",
     "librispeech",
     "wenetspeech",
     "fleurs",
@@ -31,6 +38,9 @@ NEW_DATASETS = [
     "audiocaps",
     "clotho",
     "openhermes25",
+    "ultrachat",
+    "spoken_squad",
+    "musan",
     "tulu3_sft_mixture",
 ]
 

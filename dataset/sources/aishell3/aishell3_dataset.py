@@ -83,7 +83,7 @@ class AIShell3Dataset(BaseDataset):
                                 "role": "user",
                                 "content": [
                                     {
-                                        "text": transcript,
+                                        "text": self.build_tts_instruction(transcript),
                                         "audio_path": None,
                                     }
                                 ],

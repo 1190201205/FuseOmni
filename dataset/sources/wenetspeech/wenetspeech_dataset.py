@@ -13,6 +13,7 @@ class WenetSpeechDataset(BaseDataset):
     """Load WenetSpeech metadata and convert segments to message-format ASR samples."""
 
     _SUPPORTED_SUBSETS = ("L", "M", "S", "DEV", "TEST_NET", "TEST_MEETING")
+    _ASR_INSTRUCTION = BaseDataset.build_asr_instruction("Chinese")
 
     def __init__(
         self,
@@ -69,7 +70,7 @@ class WenetSpeechDataset(BaseDataset):
                                 "role": "user",
                                 "content": [
                                     {
-                                        "text": None,
+                                        "text": self._ASR_INSTRUCTION,
                                         "audio_path": relative_audio_path,
                                         "audio_start_sec": float(
                                             segment.get("begin_time", 0.0)

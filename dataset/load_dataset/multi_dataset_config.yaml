@@ -18,6 +18,18 @@ datasets:
     split: train          # 可选: train / test / ""(全部)
     max_samples: 2000
 
+  libritts:
+    enabled: false
+    root: /mnt/afs/share/voice_model_project/datasets/LibriTTS
+    subset: ""            # 可选: train-clean-100 / train-clean-360 / train-other-500 / ""(全部 train 子集)
+    max_samples: 2000
+
+  vctk:
+    enabled: false
+    root: /mnt/afs/share/voice_model_project/datasets/VCTK
+    split: train          # 该数据集无正式 split，train 表示使用全部可用样本
+    max_samples: 2000
+
   voiceassistant400k:
     enabled: true
     root: /mnt/afs/share/voice_model_project/datasets/VoiceAssistant-400K
@@ -63,6 +75,23 @@ datasets:
   clotho:
     enabled: false
     root: /mnt/afs/share/voice_model_project/datasets/Clotho
+    split: train
+    max_samples: 2000
+
+  ultrachat:
+    enabled: false
+    root: /mnt/afs/share/voice_model_project/datasets/ultrachat
+    max_samples: 2000
+
+  spoken_squad:
+    enabled: false
+    root: /mnt/afs/share/voice_model_project/datasets/Spoken-SQuAD
+    split: train
+    max_samples: 2000
+
+  musan:
+    enabled: false
+    root: /mnt/afs/share/voice_model_project/datasets/MUSAN
     split: train
     max_samples: 2000
 

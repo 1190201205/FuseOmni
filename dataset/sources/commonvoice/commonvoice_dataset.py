@@ -135,7 +135,7 @@ class CommonVoiceDataset(BaseDataset):
                                 "role": "user",
                                 "content": [
                                     {
-                                        "text": None,
+                                        "text": self.build_asr_instruction(language_name),
                                         "audio_path": audio_abs_path.relative_to(
                                             self.dataset_root
                                         ).as_posix(),

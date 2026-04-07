@@ -130,7 +130,7 @@ class FLEURSDataset(BaseDataset):
                                 "role": "user",
                                 "content": [
                                     {
-                                        "text": None,
+                                        "text": self.build_asr_instruction(language_name),
                                         "audio_path": audio_rel_path,
                                     }
                                 ],

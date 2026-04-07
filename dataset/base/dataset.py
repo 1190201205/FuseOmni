@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence
 
@@ -19,6 +20,60 @@ class BaseDataset(TorchDataset):
     子类需要实现 `load_data`，并将加载的字典添加到 `self.samples` 或者覆盖 `__iter__` 方法以支持流式读取。
     """
     
+    _ASR_CHINESE_LANGUAGE_ALIASES = {
+        "zh",
+        "zh-cn",
+        "zh_cn",
+        "zh-tw",
+        "zh_tw",
+        "cmn",
+        "cmn_hans_cn",
+        "cmn_hant_tw",
+        "chinese",
+    }
+
+    _ASR_LANGUAGE_DISPLAY_NAMES = {
+        "ar": "Arabic",
+        "ar_eg": "Arabic",
+        "de": "German",
+        "de_de": "German",
+        "en": "English",
+        "en-us": "English",
+        "en_us": "English",
+        "english": "English",
+        "es": "Spanish",
+        "es-419": "Spanish",
+        "es_419": "Spanish",
+        "fr": "French",
+        "fr-fr": "French",
+        "fr_fr": "French",
+        "id": "Indonesian",
+        "id_id": "Indonesian",
+        "it": "Italian",
+        "it_it": "Italian",
+        "ja": "Japanese",
+        "ja_jp": "Japanese",
+        "ko": "Korean",
+        "ko_kr": "Korean",
+        "ms": "Malay",
+        "ms_my": "Malay",
+        "nl": "Dutch",
+        "nl_nl": "Dutch",
+        "pt": "Portuguese",
+        "pt_br": "Portuguese",
+        "ru": "Russian",
+        "ru_ru": "Russian",
+        "tr": "Turkish",
+        "tr_tr": "Turkish",
+        "ur": "Urdu",
+        "ur_pk": "Urdu",
+        "vi": "Vietnamese",
+        "vi_vn": "Vietnamese",
+        "yue": "Cantonese",
+        "yue_hant_hk": "Cantonese",
+    }
+    _TTS_PROMPT_PREFIX = "Convert the text to speech.\n "
+
     def __init__(self, dataset_name: str, dataset_root: str | Path, **kwargs: Any) -> None:
         self.dataset_name = dataset_name
         self.dataset_root = Path(dataset_root).expanduser().resolve()
@@ -106,3 +161,43 @@ class BaseDataset(TorchDataset):
                         ) from exc
 
         return samples
+
+    @classmethod
+    def build_asr_instruction(cls, source_language: str | None) -> str:
+        normalized = cls._normalize_language_tag(source_language)
+        if normalized in cls._ASR_CHINESE_LANGUAGE_ALIASES:
+            return "请将这段中文语音转换为纯文本。"
+
+        display_name = cls._ASR_LANGUAGE_DISPLAY_NAMES.get(normalized)
+        if display_name is None:
+            display_name = cls._humanize_language_name(source_language)
+        return f"Transcribe the {display_name} audio into text."
+
+    @staticmethod
+    def _normalize_language_tag(source_language: str | None) -> str:
+        return str(source_language or "").strip().lower()
+
+    @classmethod
+    def _humanize_language_name(cls, source_language: str | None) -> str:
+        text = str(source_language or "").strip()
+        if not text:
+            return "source"
+
+        normalized = cls._normalize_language_tag(text)
+        if normalized in cls._ASR_CHINESE_LANGUAGE_ALIASES:
+            return "Chinese"
+
+        parts = [part for part in re.split(r"[_-]+", text) if part]
+        if not parts:
+            return "source"
+
+        if len(parts) > 1 and (parts[-1].isupper() or parts[-1].isdigit()):
+            parts = parts[:-1]
+        return " ".join(part.capitalize() for part in parts)
+
+    @classmethod
+    def build_tts_instruction(cls, text: str) -> str:
+        normalized_text = str(text).strip()
+        if not normalized_text:
+            raise ValueError("TTS input text cannot be empty.")
+        return f"{cls._TTS_PROMPT_PREFIX}{normalized_text}"

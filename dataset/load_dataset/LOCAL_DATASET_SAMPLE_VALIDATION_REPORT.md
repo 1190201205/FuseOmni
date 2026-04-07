@@ -11,6 +11,216 @@
 3. Instantiate the registered loader with `max_samples=<sample-count>`.
 4. Validate top-level fields, `messages` structure, and whether each non-null `audio_path` resolves to an existing file.
 
+## libritts
+
+- Original root: `/mnt/afs/share/voice_model_project/datasets/LibriTTS`
+- Local root: `/data/share/voice_model_project/datasets/LibriTTS`
+- Loader kwargs: `{"subset": "", "max_samples": 3, "dataset_root": "/data/share/voice_model_project/datasets/LibriTTS"}`
+- Loaded samples: `3`
+- Sample checks:
+  - sample[0] id=`libritts_train_clean_100_103_1241_000000_000001` task=`TTS` data_source=`libritts_train_clean_100`
+    - structure: ok
+    - audio_path: null
+    - audio_path: `train-clean-100/103/1241/103_1241_000000_000001.wav` -> `/data/share/voice_model_project/datasets/LibriTTS/train-clean-100/103/1241/103_1241_000000_000001.wav` (exists=True)
+    - sample json:
+```json
+{
+  "id": "libritts_train_clean_100_103_1241_000000_000001",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Convert the text to speech.\n matthew Cuthbert is surprised",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": null,
+          "audio_path": "train-clean-100/103/1241/103_1241_000000_000001.wav"
+        }
+      ]
+    }
+  ],
+  "task": "TTS",
+  "data_source": "libritts_train_clean_100"
+}
+```
+  - sample[1] id=`libritts_train_clean_100_103_1241_000004_000002` task=`TTS` data_source=`libritts_train_clean_100`
+    - structure: ok
+    - audio_path: null
+    - audio_path: `train-clean-100/103/1241/103_1241_000004_000002.wav` -> `/data/share/voice_model_project/datasets/LibriTTS/train-clean-100/103/1241/103_1241_000004_000002.wav` (exists=True)
+    - sample json:
+```json
+{
+  "id": "libritts_train_clean_100_103_1241_000004_000002",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Convert the text to speech.\n In fact, he had looked at twenty very much as he looked at sixty, lacking a little of the grayness.",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": null,
+          "audio_path": "train-clean-100/103/1241/103_1241_000004_000002.wav"
+        }
+      ]
+    }
+  ],
+  "task": "TTS",
+  "data_source": "libritts_train_clean_100"
+}
+```
+  - sample[2] id=`libritts_train_clean_100_103_1241_000007_000001` task=`TTS` data_source=`libritts_train_clean_100`
+    - structure: ok
+    - audio_path: null
+    - audio_path: `train-clean-100/103/1241/103_1241_000007_000001.wav` -> `/data/share/voice_model_project/datasets/LibriTTS/train-clean-100/103/1241/103_1241_000007_000001.wav` (exists=True)
+    - sample json:
+```json
+{
+  "id": "libritts_train_clean_100_103_1241_000007_000001",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Convert the text to speech.\n \"But there was a passenger dropped off for you-a little girl.",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": null,
+          "audio_path": "train-clean-100/103/1241/103_1241_000007_000001.wav"
+        }
+      ]
+    }
+  ],
+  "task": "TTS",
+  "data_source": "libritts_train_clean_100"
+}
+```
+- Status: passed
+
+## vctk
+
+- Original root: `/mnt/afs/share/voice_model_project/datasets/VCTK`
+- Local root: `/data/share/voice_model_project/datasets/VCTK`
+- Loader kwargs: `{"split": "train", "max_samples": 3, "dataset_root": "/data/share/voice_model_project/datasets/VCTK"}`
+- Loaded samples: `3`
+- Sample checks:
+  - sample[0] id=`vctk_p225_001` task=`TTS` data_source=`vctk`
+    - structure: ok
+    - audio_path: null
+    - audio_path: `wav48_silence_trimmed/p225/p225_001_mic1.flac` -> `/data/share/voice_model_project/datasets/VCTK/wav48_silence_trimmed/p225/p225_001_mic1.flac` (exists=True)
+    - sample json:
+```json
+{
+  "id": "vctk_p225_001",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Convert the text to speech.\n Please call Stella.",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": null,
+          "audio_path": "wav48_silence_trimmed/p225/p225_001_mic1.flac"
+        }
+      ]
+    }
+  ],
+  "task": "TTS",
+  "data_source": "vctk"
+}
+```
+  - sample[1] id=`vctk_p225_002` task=`TTS` data_source=`vctk`
+    - structure: ok
+    - audio_path: null
+    - audio_path: `wav48_silence_trimmed/p225/p225_002_mic1.flac` -> `/data/share/voice_model_project/datasets/VCTK/wav48_silence_trimmed/p225/p225_002_mic1.flac` (exists=True)
+    - sample json:
+```json
+{
+  "id": "vctk_p225_002",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Convert the text to speech.\n Ask her to bring these things with her from the store.",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": null,
+          "audio_path": "wav48_silence_trimmed/p225/p225_002_mic1.flac"
+        }
+      ]
+    }
+  ],
+  "task": "TTS",
+  "data_source": "vctk"
+}
+```
+  - sample[2] id=`vctk_p225_003` task=`TTS` data_source=`vctk`
+    - structure: ok
+    - audio_path: null
+    - audio_path: `wav48_silence_trimmed/p225/p225_003_mic1.flac` -> `/data/share/voice_model_project/datasets/VCTK/wav48_silence_trimmed/p225/p225_003_mic1.flac` (exists=True)
+    - sample json:
+```json
+{
+  "id": "vctk_p225_003",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Convert the text to speech.\n Six spoons of fresh snow peas, five thick slabs of blue cheese, and maybe a snack for her brother Bob.",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": null,
+          "audio_path": "wav48_silence_trimmed/p225/p225_003_mic1.flac"
+        }
+      ]
+    }
+  ],
+  "task": "TTS",
+  "data_source": "vctk"
+}
+```
+- Status: passed
+
 ## librispeech
 
 - Original root: `/mnt/afs/share/voice_model_project/datasets/LibriSpeech`
@@ -31,7 +241,7 @@
       "role": "user",
       "content": [
         {
-          "text": null,
+          "text": "Transcribe the English audio into text.",
           "audio_path": "train-clean-100/103/1240/103-1240-0000.flac"
         }
       ]
@@ -63,7 +273,7 @@
       "role": "user",
       "content": [
         {
-          "text": null,
+          "text": "Transcribe the English audio into text.",
           "audio_path": "train-clean-100/103/1240/103-1240-0001.flac"
         }
       ]
@@ -95,7 +305,7 @@
       "role": "user",
       "content": [
         {
-          "text": null,
+          "text": "Transcribe the English audio into text.",
           "audio_path": "train-clean-100/103/1240/103-1240-0002.flac"
         }
       ]
@@ -136,7 +346,7 @@
       "role": "user",
       "content": [
         {
-          "text": null,
+          "text": "请将这段中文语音转换为纯文本。",
           "audio_path": "train/audio/train/youtube/B00000/Y0000000000_--5llN02F84.opus",
           "audio_start_sec": 20.08,
           "audio_end_sec": 24.4
@@ -170,7 +380,7 @@
       "role": "user",
       "content": [
         {
-          "text": null,
+          "text": "请将这段中文语音转换为纯文本。",
           "audio_path": "train/audio/train/youtube/B00000/Y0000000000_--5llN02F84.opus",
           "audio_start_sec": 25.0,
           "audio_end_sec": 26.28
@@ -204,7 +414,7 @@
       "role": "user",
       "content": [
         {
-          "text": null,
+          "text": "请将这段中文语音转换为纯文本。",
           "audio_path": "train/audio/train/youtube/B00000/Y0000000000_--5llN02F84.opus",
           "audio_start_sec": 26.68,
           "audio_end_sec": 30.48
@@ -247,7 +457,7 @@
       "role": "user",
       "content": [
         {
-          "text": null,
+          "text": "Transcribe the English audio into text.",
           "audio_path": "raw/en_us/audio/train/11559549184357409250.wav"
         }
       ]
@@ -279,7 +489,7 @@
       "role": "user",
       "content": [
         {
-          "text": null,
+          "text": "Transcribe the English audio into text.",
           "audio_path": "raw/en_us/audio/train/4521018244012475111.wav"
         }
       ]
@@ -311,7 +521,7 @@
       "role": "user",
       "content": [
         {
-          "text": null,
+          "text": "Transcribe the English audio into text.",
           "audio_path": "raw/en_us/audio/train/5196818739829249943.wav"
         }
       ]
@@ -352,7 +562,7 @@
       "role": "user",
       "content": [
         {
-          "text": null,
+          "text": "请将这段中文语音转换为纯文本。",
           "audio_path": "raw/zh-TW/clips/common_voice_zh-TW_30575781.mp3"
         }
       ]
@@ -384,7 +594,7 @@
       "role": "user",
       "content": [
         {
-          "text": null,
+          "text": "请将这段中文语音转换为纯文本。",
           "audio_path": "raw/zh-TW/clips/common_voice_zh-TW_30575782.mp3"
         }
       ]
@@ -416,7 +626,7 @@
       "role": "user",
       "content": [
         {
-          "text": null,
+          "text": "请将这段中文语音转换为纯文本。",
           "audio_path": "raw/zh-TW/clips/common_voice_zh-TW_30575783.mp3"
         }
       ]
@@ -846,6 +1056,512 @@
     "skip_prompt_formatting": false,
     "json_file": "openhermes2_5.json",
     "sample_index": 2
+  }
+}
+```
+- Status: passed
+
+## ultrachat
+
+- Original root: `/mnt/afs/share/voice_model_project/datasets/ultrachat`
+- Local root: `/data/share/voice_model_project/datasets/ultrachat`
+- Loader kwargs: `{"max_samples": 3, "dataset_root": "/data/share/voice_model_project/datasets/ultrachat"}`
+- Loaded samples: `3`
+- Sample checks:
+  - sample[0] id=`ultrachat_0` task=`text_sft` data_source=`ultrachat`
+    - structure: ok
+    - audio_path: null
+    - audio_path: null
+    - audio_path: null
+    - audio_path: null
+    - audio_path: null
+    - audio_path: null
+    - sample json:
+```json
+{
+  "id": "ultrachat_0",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "How can cross training benefit groups like runners, swimmers, or weightlifters?",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "Cross training can benefit groups like runners, swimmers, or weightlifters in the following ways:\n\n1. Reduces the risk of injury: Cross training involves different types of exercises that work different muscle groups. This reduces the risk of overuse injuries that may result from repetitive use of the same muscles.\n\n2. Improves overall fitness: Cross training helps improve overall fitness levels by maintaining a balance of strength, endurance, flexibility, and cardiovascular fitness.\n\n3. Breaks monotony: Cross training adds variety to your fitness routine by introducing new exercises, which can help you stay motivated and avoid boredom that often comes with doing the same exercises repeatedly.\n\n4. Increases strength: Cross training helps in building strength by incorporating exercises that target different muscle groups. This helps you build strength in areas that may be underdeveloped.\n\n5. Enhances performance: Cross training allows you to work on different aspects of fitness that are essential for your sport or activity. For example, a runner can benefit from strength training as it helps build stronger muscles and improves running economy.\n\nOverall, cross training offers numerous benefits to athletes and fitness enthusiasts. By incorporating other forms of exercise into their routine, individuals can improve their overall fitness, reduce the risk of injury, and enhance their performance.",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "That makes sense. I've been wanting to improve my running time, but I never thought about incorporating strength training. Do you have any recommendations for specific exercises?",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "Sure, here are some strength training exercises that can benefit runners:\n\n1. Squats: Squats target the glutes, quadriceps, and hamstrings. They help improve lower-body strength, power, and stability, making them an excellent exercise for runners.\n\n2. Lunges: Lunges target the same muscles as squats but also work the hip flexors and help improve balance.\n\n3. Deadlifts: Deadlifts are a compound exercise that targets the glutes, hamstrings, and lower back. They improve lower body strength, power, and stability.\n\n4. Plyometric exercises: Plyometric exercises such as jump squats, box jumps, or single-leg hops can help improve explosive power, which is crucial for sprinting.\n\n5. Calf raises: Calf raises target the calves and help improve running economy by strengthening the muscles that propel you forward.\n\nIt's important to remember to start with lighter weights and proper form to avoid injury. I recommend consulting with a personal trainer or coach for guidance on proper form and technique.",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Hmm, I'm not really a fan of weightlifting though. Can I incorporate other forms of exercise into my routine to improve my running time?",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "Yes, absolutely! In addition to strength training, there are many other types of exercises that can help improve running performance without involving weightlifting. Here are some examples:\n\n1. Plyometric exercises: Plyometric exercises like jump squats, box jumps or single-leg jumps improve explosive power which can make your runs more efficient.\n\n2. Hill training
+```
+  - sample[1] id=`ultrachat_1` task=`text_sft` data_source=`ultrachat`
+    - structure: ok
+    - audio_path: null
+    - audio_path: null
+    - audio_path: null
+    - audio_path: null
+    - audio_path: null
+    - audio_path: null
+    - sample json:
+```json
+{
+  "id": "ultrachat_1",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Are there any particular physical benefits to mindful walking, such as improved posture or increased physical fitness?",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "Yes, there are physical benefits to mindful walking, such as improved posture, increased physical fitness, and better balance. Mindful walking can also help relieve tension in the body, reduce stress, and improve flexibility. It can also improve circulation and help with weight management. By tuning into the body, mindful walking can also help individuals identify and address any imbalances or discomfort, leading to a healthier and more aligned body.",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "That sounds great! Can you give me some tips on how to incorporate mindful walking into my daily routine?",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "Sure, here are some tips on how to incorporate mindful walking into your daily routine:\n\n1. Choose a quiet and peaceful environment for your walk. This could be a park, a quiet neighborhood, or even a garden.\n\n2. Start by tuning into your breath and becoming aware of your surroundings. Take deep and slow breaths in and out.\n\n3. Pay attention to the sensations in your body as you walk. Notice the movement of your feet, the weight shifting from one leg to the other, and the movement of your arms.\n\n4. Focus your attention on your surroundings. Notice the colors, smells, and sounds around you. Engage your senses fully and take everything in.\n\n5. Be present and let go of any thoughts or worries that may arise. Bring your attention back to the present moment and continue to observe your surroundings as you walk.\n\n6. Try to maintain a slow and steady pace. This will help you stay present and focused on your walk.\n\n7. Set an intention for your walk, such as gratitude or compassion. This will help you stay focused and centered during your practice.\n\nBy incorporating mindful walking into your daily routine, you can experience many physical and mental benefits. Enjoy your walk!",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Wow, I never realized that walking could have so many benefits. I think I need to start incorporating mindful walking into my daily routine. But what if I live in a busy city and can't find a quiet place to walk? How can I still practice mindful walking in a noisy environment?",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "That's a great question! Even in a busy city with lots of noise, there are still ways to practice mindful walking. Here are few strategies:\n\n1. Use headphones or earplugs to block out noise. You can listen to calming music or sounds that help you relax, or simply use earplugs to muffle the sound.\n\n2. Focus on your breath, rather than your surroundings. In a noisy environment, it can be easy to get distracted by the surrounding sounds. Instead, focus on your breath and the sensation of walking as much as possible.\n\n3. Use a mantra or phrase to help you stay centered. Choose a word or phrase that is meaningful to you (e.g. \"peace\" or \"I am calm\") and repeat it to yourself quietly as you walk.\n\n4. Practice walking at a different time of day. If the noise is too overwhelming during the day, try walking early in the morning, or later in the evening when it's quieter.\n\n5. Solo walking can be helpful. Sometimes, walking in busy or noisy areas can lead to overstimulation, so try walking alone or with a small group to reduce so
+```
+  - sample[2] id=`ultrachat_2` task=`text_sft` data_source=`ultrachat`
+    - structure: ok
+    - audio_path: null
+    - audio_path: null
+    - audio_path: null
+    - audio_path: null
+    - audio_path: null
+    - audio_path: null
+    - sample json:
+```json
+{
+  "id": "ultrachat_2",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "What percentage of the Earth's surface is covered by oceans?",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "About 71% of the Earth's surface is covered by oceans.",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Wow, that's a lot of water! No wonder we call it the blue planet.",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "Yes, it certainly is! The oceans play a vital role in regulating the Earth's climate and supporting life on our planet. And they're also a great source of food, energy, and recreation for us humans!",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Absolutely! I love visiting the beach and going for a swim in the ocean. It's amazing how vast and powerful the sea can be, yet also so peaceful and calming.",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "As an AI language model, I have never gone to the beach or swam in the ocean, but based on what you said, I am sure it's a wonderful experience. The ocean is a place of great beauty and mystery, full of fascinating creatures and hidden treasures waiting to be discovered. It can be both a source of wonder and a reminder of the awesome power of nature.",
+          "audio_path": null
+        }
+      ]
+    }
+  ],
+  "task": "text_sft",
+  "data_source": "ultrachat",
+  "metadata": {
+    "source": "ultrachat",
+    "num_turns": 3,
+    "src_file": "train_0.jsonl",
+    "orig_id": "2"
+  }
+}
+```
+- Status: passed
+
+## spoken_squad
+
+- Original root: `/mnt/afs/share/voice_model_project/datasets/Spoken-SQuAD`
+- Local root: `/data/share/voice_model_project/datasets/Spoken-SQuAD`
+- Loader kwargs: `{"split": "train", "max_samples": 3, "dataset_root": "/data/share/voice_model_project/datasets/Spoken-SQuAD"}`
+- Loaded samples: `3`
+- Sample checks:
+  - sample[0] id=`spoken_squad_train_5733be284776f4190066117f` task=`QA` data_source=`spoken_squad_train`
+    - structure: ok
+    - audio_path: null
+    - audio_path: null
+    - sample json:
+```json
+{
+  "id": "spoken_squad_train_5733be284776f4190066117f",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Read the passage and answer the question.\n\nContext: architecturally the school has a catholic character. atop the main building school dome is the golden statue of the virgin mary. immediately in front of the main building in facing it is a copper statue of christ with arms appraised with the legend and the bad meow names. next to the main building is the basilica of the sacred heart. immediately behind the basilica is the grotto im mary in place of prayer and reflection. it is a replica of the grotto at lourdes france where the virgin mary reputedly appeared to st bernadette still burning eighteen fifty eight. at the end of the main drive and in a direct line that connects through three statues in the gold dome is as simple modern stone statue of mary.\n\nQuestion: What is in front of the Notre Dame Main Building?",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "a copper statue of christ",
+          "audio_path": null
+        }
+      ]
+    }
+  ],
+  "task": "QA",
+  "data_source": "spoken_squad_train",
+  "metadata": {
+    "title": "University_of_Notre_Dame",
+    "context": "architecturally the school has a catholic character. atop the main building school dome is the golden statue of the virgin mary. immediately in front of the main building in facing it is a copper statue of christ with arms appraised with the legend and the bad meow names. next to the main building is the basilica of the sacred heart. immediately behind the basilica is the grotto im mary in place of prayer and reflection. it is a replica of the grotto at lourdes france where the virgin mary reputedly appeared to st bernadette still burning eighteen fifty eight. at the end of the main drive and in a direct line that connects through three statues in the gold dome is as simple modern stone statue of mary.",
+    "question": "What is in front of the Notre Dame Main Building?",
+    "answers": {
+      "text": [
+        "a copper statue of christ"
+      ],
+      "answer_start": [
+        187
+      ]
+    },
+    "source_file": "raw/train.json",
+    "source_id": "5733be284776f4190066117f"
+  }
+}
+```
+  - sample[1] id=`spoken_squad_train_5733be284776f41900661180` task=`QA` data_source=`spoken_squad_train`
+    - structure: ok
+    - audio_path: null
+    - audio_path: null
+    - sample json:
+```json
+{
+  "id": "spoken_squad_train_5733be284776f41900661180",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Read the passage and answer the question.\n\nContext: architecturally the school has a catholic character. atop the main building school dome is the golden statue of the virgin mary. immediately in front of the main building in facing it is a copper statue of christ with arms appraised with the legend and the bad meow names. next to the main building is the basilica of the sacred heart. immediately behind the basilica is the grotto im mary in place of prayer and reflection. it is a replica of the grotto at lourdes france where the virgin mary reputedly appeared to st bernadette still burning eighteen fifty eight. at the end of the main drive and in a direct line that connects through three statues in the gold dome is as simple modern stone statue of mary.\n\nQuestion: The Basilica of the Sacred heart at Notre Dame is beside to which structure?",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "the main building",
+          "audio_path": null
+        }
+      ]
+    }
+  ],
+  "task": "QA",
+  "data_source": "spoken_squad_train",
+  "metadata": {
+    "title": "University_of_Notre_Dame",
+    "context": "architecturally the school has a catholic character. atop the main building school dome is the golden statue of the virgin mary. immediately in front of the main building in facing it is a copper statue of christ with arms appraised with the legend and the bad meow names. next to the main building is the basilica of the sacred heart. immediately behind the basilica is the grotto im mary in place of prayer and reflection. it is a replica of the grotto at lourdes france where the virgin mary reputedly appeared to st bernadette still burning eighteen fifty eight. at the end of the main drive and in a direct line that connects through three statues in the gold dome is as simple modern stone statue of mary.",
+    "question": "The Basilica of the Sacred heart at Notre Dame is beside to which structure?",
+    "answers": {
+      "text": [
+        "the main building"
+      ],
+      "answer_start": [
+        58
+      ]
+    },
+    "source_file": "raw/train.json",
+    "source_id": "5733be284776f41900661180"
+  }
+}
+```
+  - sample[2] id=`spoken_squad_train_5733bf84d058e614000b61bf` task=`QA` data_source=`spoken_squad_train`
+    - structure: ok
+    - audio_path: null
+    - audio_path: null
+    - sample json:
+```json
+{
+  "id": "spoken_squad_train_5733bf84d058e614000b61bf",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Read the passage and answer the question.\n\nContext: as in most other universities notre dame students write a number of news media outlets. the nine stand and run out lets include three newspapers but the radio and television station in several magazines and journals. he gonna sell one page journal in september eighteen seventy six the scholastic magazine is issued twice monthly in claims to be the oldest continuous collegiate publication in the united states. the other magazine the juggler is released twice a year and focuses on student literature and art for. they dont hear book is published annually. the newspapers have varying publication interests with the observer published daily and mainly reporting university in other news and staffed by students from both notre dame and st marys college. unlike scholastic in the dome the observer is an independent publications and does not have the faculty advisor or any editorial oversight from the university. in nineteen eighty seven when some students believe that the observer began to shelly conservative bias liberal newspaper common sense was published. likewise in ten thousand three when other students believe that the papers showed a liberal bias the conservative paper irish rover went into production. neither papers published as often as the observer however all three are distributed to all students. finally in spring two thousand eight an undergraduate journal for political science research beyond politics made its debut.\n\nQuestion: How often is Notre Dame's the Juggler published?",
+          "audio_path": null
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "twice",
+          "audio_path": null
+        }
+      ]
+    }
+  ],
+  "task": "QA",
+  "data_source": "spoken_squad_train",
+  "metadata": {
+    "title": "University_of_Notre_Dame",
+    "context": "as in most other universities notre dame students write a number of news media outlets. the nine stand and run out lets include three newspapers but the radio and television station in several magazines and journals. he gonna sell one page journal in september eighteen seventy six the scholastic magazine is issued twice monthly in claims to be the oldest continuous collegiate publication in the united states. the other magazine the juggler is released twice a year and focuses on student literature and art for. they dont hear book is published annually. the newspapers have varying publication interests with the observer published daily and mainly reporting university in other news and staffed by students from both notre dame and st marys college. unlike scholastic in the dome the observer is an independent publications and does not have the faculty advisor or any editorial oversight from the university. in nineteen eighty seven when some students believe that the observer began to shelly conservative bias liberal newspaper common sense was published. likewise in ten thousand three when other students believe that the papers showed a liberal bias the conservative paper irish rover went into production. neither papers published as often as the observer however all three are distributed to all students. finally in spring two thousand eight an undergraduate journal for political science research beyond politics made its debut.",
+    "question": "How often is Notre Dame's the Juggler published?",
+    "answers": {
+      "text": [
+        "twice"
+      ],
+      "answer_start": [
+        316
+      ]
+    },
+    "source_file": "raw/train.json",
+    "source_id": "5733bf84d058e614000b61bf"
+  }
+}
+```
+- Status: passed
+
+## musan
+
+- Original root: `/mnt/afs/share/voice_model_project/datasets/MUSAN`
+- Local root: `/data/share/voice_model_project/datasets/MUSAN`
+- Loader kwargs: `{"split": "train", "max_samples": 3, "dataset_root": "/data/share/voice_model_project/datasets/MUSAN"}`
+- Loaded samples: `3`
+- Sample checks:
+  - sample[0] id=`musan_train_music_fma_music-fma-0000_3dd3f64729` task=`AudioClassification` data_source=`musan_train`
+    - structure: ok
+    - audio_path: `audio/musan/music/fma/music-fma-0000.wav` -> `/data/share/voice_model_project/datasets/MUSAN/audio/musan/music/fma/music-fma-0000.wav` (exists=True)
+    - audio_path: null
+    - sample json:
+```json
+{
+  "id": "musan_train_music_fma_music-fma-0000_3dd3f64729",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Classify this audio into one of three categories: speech, music, or noise.",
+          "audio_path": "audio/musan/music/fma/music-fma-0000.wav"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "music",
+          "audio_path": null
+        }
+      ]
+    }
+  ],
+  "task": "AudioClassification",
+  "data_source": "musan_train",
+  "metadata": {
+    "category": "music",
+    "source": "fma",
+    "source_path": "music/fma/music-fma-0000.wav",
+    "annotation_file": "music/fma/ANNOTATIONS",
+    "annotation_text": "electronica N Airglow",
+    "genres": [
+      "electronica"
+    ],
+    "vocals": "N",
+    "artist": "Airglow"
+  }
+}
+```
+  - sample[1] id=`musan_train_music_fma_music-fma-0001_ee43864c26` task=`AudioClassification` data_source=`musan_train`
+    - structure: ok
+    - audio_path: `audio/musan/music/fma/music-fma-0001.wav` -> `/data/share/voice_model_project/datasets/MUSAN/audio/musan/music/fma/music-fma-0001.wav` (exists=True)
+    - audio_path: null
+    - sample json:
+```json
+{
+  "id": "musan_train_music_fma_music-fma-0001_ee43864c26",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Classify this audio into one of three categories: speech, music, or noise.",
+          "audio_path": "audio/musan/music/fma/music-fma-0001.wav"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "music",
+          "audio_path": null
+        }
+      ]
+    }
+  ],
+  "task": "AudioClassification",
+  "data_source": "musan_train",
+  "metadata": {
+    "category": "music",
+    "source": "fma",
+    "source_path": "music/fma/music-fma-0001.wav",
+    "annotation_file": "music/fma/ANNOTATIONS",
+    "annotation_text": "electronica N Airglow",
+    "genres": [
+      "electronica"
+    ],
+    "vocals": "N",
+    "artist": "Airglow"
+  }
+}
+```
+  - sample[2] id=`musan_train_music_fma_music-fma-0002_8b9c8d35d9` task=`AudioClassification` data_source=`musan_train`
+    - structure: ok
+    - audio_path: `audio/musan/music/fma/music-fma-0002.wav` -> `/data/share/voice_model_project/datasets/MUSAN/audio/musan/music/fma/music-fma-0002.wav` (exists=True)
+    - audio_path: null
+    - sample json:
+```json
+{
+  "id": "musan_train_music_fma_music-fma-0002_8b9c8d35d9",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Classify this audio into one of three categories: speech, music, or noise.",
+          "audio_path": "audio/musan/music/fma/music-fma-0002.wav"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "music",
+          "audio_path": null
+        }
+      ]
+    }
+  ],
+  "task": "AudioClassification",
+  "data_source": "musan_train",
+  "metadata": {
+    "category": "music",
+    "source": "fma",
+    "source_path": "music/fma/music-fma-0002.wav",
+    "annotation_file": "music/fma/ANNOTATIONS",
+    "annotation_text": "electronica N Airglow",
+    "genres": [
+      "electronica"
+    ],
+    "vocals": "N",
+    "artist": "Airglow"
   }
 }
 ```

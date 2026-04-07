@@ -15,6 +15,8 @@ from dataset.base.dataset import BaseDataset
 # Ensure all dataset subclasses are registered by importing them
 import dataset.sources.aishell1.aishell1_dataset
 import dataset.sources.aishell3.aishell3_dataset
+import dataset.sources.libritts.libritts_dataset
+import dataset.sources.vctk.vctk_dataset
 import dataset.sources.voiceassistant400k.voiceassistant400k_dataset
 import dataset.sources.mmsu.mmsu_dataset
 import dataset.sources.librispeech.librispeech_dataset
@@ -24,6 +26,9 @@ import dataset.sources.commonvoice.commonvoice_dataset
 import dataset.sources.audiocaps.audiocaps_dataset
 import dataset.sources.clotho.clotho_dataset
 import dataset.sources.openhermes25.openhermes25_dataset
+import dataset.sources.ultrachat.ultrachat_dataset
+import dataset.sources.spoken_squad.spoken_squad_dataset
+import dataset.sources.musan.musan_dataset
 import dataset.sources.tulu3_sft_mixture.tulu3_sft_mixture_dataset
 
 
